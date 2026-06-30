@@ -6,6 +6,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'Index',
     component: () => import('@/views/index/index.vue'),
+<<<<<<< HEAD
     meta: { title: '长沙大学生兼职平台', showTabBar: true },
   },
   {
@@ -79,12 +80,25 @@ const routes: RouteRecordRaw[] = [
     name: 'About',
     component: () => import('@/views/about/index.vue'),
     meta: { title: '关于我们', showTabBar: false },
+=======
+  },
+  {
+    path: '/job/detail/:id',
+    name: 'JobDetail',
+    component: () => import('@/views/job/detail.vue'),
+  },
+  {
+    path: '/mine',
+    name: 'Mine',
+    component: () => import('@/views/mine/index.vue'),
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
   },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+<<<<<<< HEAD
   scrollBehavior() {
     return { top: 0 }
   },
@@ -98,3 +112,8 @@ router.beforeEach((to, _from, next) => {
 })
 
 export default router
+=======
+})
+
+export default router
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc

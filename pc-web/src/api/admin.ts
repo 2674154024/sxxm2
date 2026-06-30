@@ -228,6 +228,10 @@ export const systemApi = {
 
 export const authApi = {
   adminLogin(data: { username: string; password: string }) {
+<<<<<<< HEAD
     return request.post('/v1/pc/admin/login', data)
+=======
+    return request.post('/v1/pc/admin/auth/login', data)
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
   }
 }

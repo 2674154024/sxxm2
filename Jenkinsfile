@@ -9,7 +9,8 @@ pipeline {
     }
     
     tools {
-        maven 'Maven 3.8.6'
+        jdk 'JDK 21'
+        maven 'Maven 3.9.9'
         nodejs 'Node 20.x'
     }
     

@@ -151,6 +151,7 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
   if (to.path === '/') {
+<<<<<<< HEAD
     if (token) {
       const roleType = localStorage.getItem('roleType')
       if (roleType) {
@@ -165,6 +166,20 @@ router.beforeEach((to, _from, next) => {
     next('/')
   } else {
     next()
+=======
+    next()
+  } else if (!token) {
+    next('/')
+  } else {
+    const roleType = localStorage.getItem('roleType')
+    if (to.path.startsWith('/admin') && !roleType) {
+      next('/')
+    } else if (to.path.startsWith('/enterprise') && roleType) {
+      next()
+    } else {
+      next()
+    }
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
   }
 })
 

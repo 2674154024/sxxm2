@@ -1,4 +1,5 @@
 <script setup lang="ts">
+<<<<<<< HEAD
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TabBar from '@/components/TabBar.vue'
@@ -60,10 +61,13 @@ function confirmLogout() {
 
 onMounted(() => {
 })
+=======
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
 </script>
 
 <template>
   <div class="mine-page">
+<<<<<<< HEAD
     <div class="mine-header">
       <div class="mine-header__bg"></div>
       <div class="mine-header__content">
@@ -421,3 +425,26 @@ onMounted(() => {
   to { transform: scale(1); opacity: 1; }
 }
 </style>
+=======
+    <h2>个人中心</h2>
+    <div class="profile-card">个人信息卡片占位</div>
+  </div>
+</template>
+
+<style scoped>
+.mine-page {
+  padding: 16px;
+}
+
+.mine-page h2 {
+  margin-bottom: 16px;
+  color: #4E5969;
+}
+
+.profile-card {
+  background-color: #FFFFFF;
+  padding: 12px;
+  border-radius: 8px;
+}
+</style>
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc

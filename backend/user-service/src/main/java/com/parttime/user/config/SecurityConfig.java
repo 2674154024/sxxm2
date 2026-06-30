@@ -66,8 +66,12 @@ public class SecurityConfig implements HandlerInterceptor {
 
     private boolean isPublicUrl(String uri) {
         return uri.startsWith("/v1/auth/") || uri.startsWith("/v1/public/")
+<<<<<<< HEAD
                 || uri.contains("/auth/register") || uri.contains("/auth/login")
                 || uri.contains("/auth/sms-code") || uri.contains("/auth/wechat");
+=======
+                || uri.contains("/auth/register") || uri.contains("/auth/login");
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
     }
 
     private void checkPermission(String uri, String role) {

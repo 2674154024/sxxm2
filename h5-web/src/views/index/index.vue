@@ -1,4 +1,5 @@
 <script setup lang="ts">
+<<<<<<< HEAD
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TabBar from '@/components/TabBar.vue'
@@ -417,3 +418,30 @@ onMounted(() => {
   color: var(--color-primary);
 }
 </style>
+=======
+</script>
+
+<template>
+  <div class="h5-index">
+    <h2>H5首页</h2>
+    <div class="job-cards">岗位列表占位</div>
+  </div>
+</template>
+
+<style scoped>
+.h5-index {
+  padding: 16px;
+}
+
+.h5-index h2 {
+  margin-bottom: 16px;
+  color: #4E5969;
+}
+
+.job-cards {
+  background-color: #FFFFFF;
+  padding: 12px;
+  border-radius: 8px;
+}
+</style>
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc

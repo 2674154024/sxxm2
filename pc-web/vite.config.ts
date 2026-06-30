@@ -32,11 +32,14 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+<<<<<<< HEAD
       '/api/v1/pc/admin': {
         target: 'http://localhost:8089',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+=======
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,

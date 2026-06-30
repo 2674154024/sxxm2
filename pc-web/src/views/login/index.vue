@@ -39,6 +39,7 @@ const handleLogin = async () => {
     })
 
     if (response.code === 200) {
+<<<<<<< HEAD
       const { token, id, username: respUsername, realName, role } = response.data
 
       if (loginType.value === 'admin') {
@@ -49,12 +50,29 @@ const handleLogin = async () => {
           phone: '',
           role_type: role || adminRole.value,
           avatar: ''
+=======
+      const { token, admin } = response.data
+
+      if (loginType.value === 'admin') {
+        adminStore.login(token, {
+          admin_id: admin.admin_id || '',
+          username: admin.username || '',
+          real_name: admin.real_name || '',
+          phone: admin.phone || '',
+          role_type: admin.role_type || adminRole.value,
+          avatar: admin.avatar || ''
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
         })
         router.push('/admin/audit/enterprise')
       } else {
         enterpriseStore.login(token, {
+<<<<<<< HEAD
           enterprise_id: id || '',
           enterprise_name: realName || '',
+=======
+          enterprise_id: admin.enterprise_id || '',
+          enterprise_name: admin.enterprise_name || '',
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
           credit_code: '',
           legal_person: '',
           phone: '',

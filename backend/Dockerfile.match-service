@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 FROM eclipse-temurin:21-jre-jammy
+=======
+FROM amazoncorretto:8u392-alpine
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
 
 WORKDIR /app
 

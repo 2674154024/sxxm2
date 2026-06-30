@@ -73,9 +73,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private boolean isWhiteList(String path) {
         return path.startsWith(AUTH_PATH_PREFIX) || path.startsWith(PUBLIC_PATH_PREFIX)
+<<<<<<< HEAD
                 || path.contains("/auth/register") || path.contains("/auth/login")
                 || path.contains("/auth/sms-code") || path.contains("/auth/wechat")
                 || path.equals("/v1/pc/admin/login");
+=======
+                || path.contains("/auth/register") || path.contains("/auth/login");
+>>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
