@@ -1,0 +1,81 @@
+:root {
+  /* 主色系 */
+  --color-primary: #165DFF;
+  --color-primary-light: #3C7EFF;
+  --color-primary-dark: #0E42D2;
+  --color-primary-bg: #E8F0FE;
+
+  /* 辅助色系 */
+  --color-accent: #FF7D00;
+  --color-accent-light: #FF9A2E;
+
+  /* 功能色系 */
+  --color-success: #00B42A;
+  --color-success-bg: #E8FFEA;
+  --color-danger: #F53F3F;
+  --color-danger-bg: #FFF1F0;
+  --color-warning: #FF7D00;
+  --color-warning-bg: #FFF7E6;
+
+  /* 中性色系 */
+  --color-bg: #FFFFFF;
+  --color-bg-secondary: #F2F3F5;
+  --color-bg-tertiary: #E5E6EB;
+  --color-text: #4E5969;
+  --color-text-secondary: #86909C;
+  --color-text-disabled: #C9CDD4;
+  --color-border: #E5E6EB;
+
+  /* 字体规范 */
+  --font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
+
+  /* 间距规范 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* 圆角规范 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-base: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* 按钮规范 */
+  --btn-height: 44px;
+  --btn-radius: 12px;
+
+  /* 输入框规范 */
+  --input-height: 44px;
+  --input-radius: 8px;
+
+  /* 布局规范 */
+  --tabbar-height: 50px;
+  --header-height: 44px;
+
+  /* 动效规范 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-expo: cubic-bezier(0.32, 0, 0.67, 0);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+
+  /* 阴影规范 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-base: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}

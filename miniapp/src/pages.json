@@ -1,0 +1,120 @@
+{
+  "pages": [
+    {
+      "path": "pages/student/index/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
+      "path": "pages/student/job-detail/index",
+      "style": {
+        "navigationBarTitleText": "岗位详情"
+      }
+    },
+    {
+      "path": "pages/student/resume/edit",
+      "style": {
+        "navigationBarTitleText": "编辑简历"
+      }
+    },
+    {
+      "path": "pages/student/apply/list",
+      "style": {
+        "navigationBarTitleText": "投递记录"
+      }
+    },
+    {
+      "path": "pages/student/im/conversation",
+      "style": {
+        "navigationBarTitleText": "消息"
+      }
+    },
+    {
+      "path": "pages/student/agreement/sign",
+      "style": {
+        "navigationBarTitleText": "电子签约"
+      }
+    },
+    {
+      "path": "pages/student/im/chat",
+      "style": {
+        "navigationBarTitleText": "聊天"
+      }
+    },
+    {
+      "path": "pages/student/clock/index",
+      "style": {
+        "navigationBarTitleText": "打卡"
+      }
+    },
+    {
+      "path": "pages/student/salary/index",
+      "style": {
+        "navigationBarTitleText": "薪资流水"
+      }
+    },
+    {
+      "path": "pages/student/safety/index",
+      "style": {
+        "navigationBarTitleText": "安全中心"
+      }
+    },
+    {
+      "path": "pages/student/complaint/create",
+      "style": {
+        "navigationBarTitleText": "投诉"
+      }
+    },
+    {
+      "path": "pages/student/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/student/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "长沙兼职",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F2F3F5"
+  },
+  "tabBar": {
+    "color": "#86909C",
+    "selectedColor": "#165DFF",
+    "borderStyle": "black",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/student/index/index",
+        "text": "首页",
+        "iconPath": "static/tabs/home.png",
+        "selectedIconPath": "static/tabs/home-active.png"
+      },
+      {
+        "pagePath": "pages/student/apply/list",
+        "text": "投递",
+        "iconPath": "static/tabs/apply.png",
+        "selectedIconPath": "static/tabs/apply-active.png"
+      },
+      {
+        "pagePath": "pages/student/im/conversation",
+        "text": "消息",
+        "iconPath": "static/tabs/message.png",
+        "selectedIconPath": "static/tabs/message-active.png"
+      },
+      {
+        "pagePath": "pages/student/mine/index",
+        "text": "我的",
+        "iconPath": "static/tabs/mine.png",
+        "selectedIconPath": "static/tabs/mine-active.png"
+      }
+    ]
+  }
+}

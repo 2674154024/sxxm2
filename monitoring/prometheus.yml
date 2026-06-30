@@ -1,0 +1,109 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+rule_files:
+  - 'alert_rules.yml'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['gateway:8080']
+    scrape_interval: 10s
+
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service:8081']
+    scrape_interval: 10s
+
+  - job_name: 'job-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['job-service:8082']
+    scrape_interval: 10s
+
+  - job_name: 'match-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['match-service:8083']
+    scrape_interval: 10s
+
+  - job_name: 'im-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['im-service:8084']
+    scrape_interval: 10s
+
+  - job_name: 'task-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['task-service:8085']
+    scrape_interval: 10s
+
+  - job_name: 'payment-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['payment-service:8086']
+    scrape_interval: 10s
+
+  - job_name: 'complaint-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['complaint-service:8087']
+    scrape_interval: 10s
+
+  - job_name: 'notification-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['notification-service:8088']
+    scrape_interval: 10s
+
+  - job_name: 'admin-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['admin-service:8089']
+    scrape_interval: 10s
+
+  - job_name: 'data-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['data-service:8090']
+    scrape_interval: 10s
+
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysql-exporter:9104']
+    scrape_interval: 30s
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  - job_name: 'elasticsearch'
+    metrics_path: '/_prometheus/metrics'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+    scrape_interval: 30s
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 15s
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
