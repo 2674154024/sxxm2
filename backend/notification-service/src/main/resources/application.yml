@@ -1,0 +1,40 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:mysql://localhost:3307/parttime_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MYSQL_ROOT_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+
+  redis:
+    host: localhost
+    port: 6379
+    password: ${REDIS_PASSWORD:}
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+aliyun:
+  sms:
+    access-key-id: ${ALIYUN_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_ACCESS_KEY_SECRET:}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:}
+    templates:
+      interview: ${ALIYUN_SMS_TEMPLATE_CODE:}
+      salary: ${ALIYUN_SMS_TEMPLATE_CODE:}
+      audit: ${ALIYUN_SMS_TEMPLATE_CODE:}
+
+sms:
+  cooldown: 60000
