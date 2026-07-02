@@ -1,8 +1,10 @@
 package com.parttime.user.controller;
 
 import com.parttime.common.response.R;
+import com.parttime.user.dto.request.PasswordLoginRequest;
 import com.parttime.user.dto.request.PhoneLoginRequest;
 import com.parttime.user.dto.request.SmsCodeRequest;
+import com.parttime.user.dto.request.StudentUserRegisterRequest;
 import com.parttime.user.dto.request.WechatLoginRequest;
 import com.parttime.user.dto.response.LoginResponse;
 import com.parttime.user.service.AuthService;
@@ -28,6 +30,16 @@ public class AuthController {
     @PostMapping("/phone-login")
     public R<LoginResponse> phoneLogin(@Validated @RequestBody PhoneLoginRequest request) {
         return R.ok(authService.phoneLogin(request));
+    }
+
+    @PostMapping("/password-login")
+    public R<LoginResponse> passwordLogin(@Validated @RequestBody PasswordLoginRequest request) {
+        return R.ok(authService.passwordLogin(request));
+    }
+
+    @PostMapping("/register")
+    public R<LoginResponse> register(@Validated @RequestBody StudentUserRegisterRequest request) {
+        return R.ok(authService.register(request));
     }
 
     @PostMapping("/sms-code")

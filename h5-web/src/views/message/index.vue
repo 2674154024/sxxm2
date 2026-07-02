@@ -48,13 +48,20 @@ async function loadConversations() {
 }
 
 function goToChat(conv: ConversationItem) {
+  console.log('goToChat called with:', conv)
+  if (!conv.conversation_id || !conv.target_user_id) {
+    console.error('Invalid conversation data:', conv)
+    return
+  }
   router.push({
     path: '/chat',
     query: {
       conversationId: conv.conversation_id,
       targetId: conv.target_user_id,
-      targetName: conv.target_name,
+      targetName: conv.target_name || '聊天',
     },
+  }).catch(err => {
+    console.error('Router push failed:', err)
   })
 }
 

@@ -21,6 +21,12 @@ public class EnterpriseEntity {
     @TableId(value = "id", type = IdType.INPUT)
     private String id;
 
+    @TableField("username")
+    private String username;
+
+    @TableField("password")
+    private String password;
+
     @TableField("enterprise_name")
     private String enterpriseName;
 
@@ -41,6 +47,9 @@ public class EnterpriseEntity {
 
     @TableField("verify_status")
     private Integer verifyStatus;
+
+    @TableField("reject_reason")
+    private String rejectReason;
 
     @TableField("is_certified")
     private Integer isCertified;

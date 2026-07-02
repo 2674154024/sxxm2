@@ -55,16 +55,18 @@ public class JobAuditServiceImpl implements JobAuditService {
         String enterpriseName = enterprise != null ? enterprise.getEnterpriseName() : "";
 
         return JobAuditResponse.builder()
-            .id(entity.getId())
+            .jobId(entity.getId())
             .jobTitle(entity.getJobTitle())
+            .enterpriseId(entity.getEnterpriseId())
             .enterpriseName(enterpriseName)
-            .workAddress(entity.getWorkAddress())
             .salaryAmount(entity.getSalaryAmount())
             .salaryType(entity.getSalaryType())
             .settlementType(entity.getSettlementType())
+            .workAddress(entity.getWorkAddress())
             .status(entity.getStatus())
-            .skillRequire(entity.getSkillRequire())
-            .createdAt(entity.getCreatedAt())
+            .submitTime(entity.getCreatedAt())
+            .hasSensitiveWord(false)
+            .sensitiveWords(new String[0])
             .build();
     }
 }

@@ -45,6 +45,7 @@ public class EnterpriseAuditServiceImpl implements EnterpriseAuditService {
         }
 
         enterprise.setVerifyStatus(request.getStatus());
+        enterprise.setRejectReason(request.getRemark());
         enterprise.setUpdatedAt(LocalDateTime.now());
         enterpriseMapper.updateById(enterprise);
     }
@@ -70,6 +71,7 @@ public class EnterpriseAuditServiceImpl implements EnterpriseAuditService {
             .verifyStatus(entity.getVerifyStatus())
             .createdAt(entity.getCreatedAt())
             .businessLicenseUrl(entity.getBusinessLicenseUrl())
+            .rejectReason(entity.getRejectReason())
             .build();
     }
 }

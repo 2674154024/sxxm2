@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.parttime.common.annotation.AuditLog;
 import com.parttime.common.exception.BusinessException;
 import com.parttime.common.util.AesUtil;
+import com.parttime.user.dto.request.ResumeRequest;
 import com.parttime.user.dto.request.StudentProfileUpdateRequest;
 import com.parttime.user.dto.request.StudentRegisterRequest;
 import com.parttime.user.dto.response.ResumeResponse;
@@ -61,13 +62,32 @@ public class StudentServiceImpl implements StudentService {
             throw new BusinessException("用户不存在");
         }
 
+        String phone = null;
+        if (student.getPhoneEncrypt() != null) {
+            try {
+                phone = DesensitizeUtil.desensitizePhone(AesUtil.decrypt(student.getPhoneEncrypt()));
+            } catch (Exception e) {
+                log.warn("手机号解密失败: {}", e.getMessage());
+            }
+        }
+
+        String idCard = null;
+        if (student.getIdCardEncrypt() != null) {
+            try {
+                idCard = DesensitizeUtil.desensitizeIdCard(AesUtil.decrypt(student.getIdCardEncrypt()));
+            } catch (Exception e) {
+                log.warn("身份证解密失败: {}", e.getMessage());
+            }
+        }
+
         return StudentProfileResponse.builder()
                 .userId(student.getId())
                 .realName(student.getRealName())
+                .nickname(student.getNickname())
                 .studentNo(student.getStudentNo())
                 .schoolId(student.getSchoolId())
-                .phone(DesensitizeUtil.desensitizePhone(AesUtil.decrypt(student.getPhoneEncrypt())))
-                .idCard(DesensitizeUtil.desensitizeIdCard(AesUtil.decrypt(student.getIdCardEncrypt())))
+                .phone(phone)
+                .idCard(idCard)
                 .avatarUrl(student.getAvatarUrl())
                 .verifyStatus(student.getVerifyStatus())
                 .creditScore(student.getCreditScore())
@@ -88,6 +108,9 @@ public class StudentServiceImpl implements StudentService {
 
         if (request.getRealName() != null) {
             student.setRealName(request.getRealName());
+        }
+        if (request.getNickname() != null) {
+            student.setNickname(request.getNickname());
         }
         if (request.getAvatarUrl() != null) {
             student.setAvatarUrl(request.getAvatarUrl());
@@ -113,10 +136,29 @@ public class StudentServiceImpl implements StudentService {
             throw new BusinessException("用户不存在");
         }
 
+        String phone = null;
+        if (student.getPhoneEncrypt() != null) {
+            try {
+                phone = AesUtil.decrypt(student.getPhoneEncrypt());
+            } catch (Exception e) {
+                log.warn("手机号解密失败: {}", e.getMessage());
+            }
+        }
+
         return ResumeResponse.builder()
                 .userId(student.getId())
+                .avatar(student.getAvatarUrl())
+                .realName(student.getRealName())
+                .gender(student.getGender())
+                .schoolName(student.getSchoolName())
+                .phone(phone)
                 .availableTime(student.getAvailableTime())
                 .skillTags(student.getSkillTags())
+                .education(student.getEducation())
+                .workExperience(student.getWorkExperience())
+                .selfIntroduction(student.getSelfIntroduction())
+                .major(student.getMajor())
+                .grade(student.getGrade())
                 .creditScore(student.getCreditScore())
                 .build();
     }
@@ -124,15 +166,46 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @AuditLog(module = "学生管理", action = "创建/更新简历")
     @Transactional
-    public void saveResume(String userId, String availableTime, String skillTags) {
+    public void saveResume(String userId, ResumeRequest request) {
         StudentEntity student = studentMapper.selectById(userId);
 
         if (student == null) {
             throw new BusinessException("用户不存在");
         }
 
-        student.setAvailableTime(availableTime);
-        student.setSkillTags(skillTags);
+        if (request.getAvatar() != null) {
+            student.setAvatarUrl(request.getAvatar());
+        }
+        if (request.getGender() != null) {
+            student.setGender(request.getGender());
+        }
+        if (request.getRealName() != null) {
+            student.setRealName(request.getRealName());
+        }
+        if (request.getPhone() != null) {
+            student.setPhoneEncrypt(AesUtil.encrypt(request.getPhone()));
+        }
+        if (request.getAvailableTime() != null) {
+            student.setAvailableTime(request.getAvailableTime());
+        }
+        if (request.getSkillTags() != null) {
+            student.setSkillTags(request.getSkillTags());
+        }
+        if (request.getEducation() != null) {
+            student.setEducation(request.getEducation());
+        }
+        if (request.getWorkExperience() != null) {
+            student.setWorkExperience(request.getWorkExperience());
+        }
+        if (request.getSelfIntroduction() != null) {
+            student.setSelfIntroduction(request.getSelfIntroduction());
+        }
+        if (request.getMajor() != null) {
+            student.setMajor(request.getMajor());
+        }
+        if (request.getGrade() != null) {
+            student.setGrade(request.getGrade());
+        }
 
         studentMapper.updateById(student);
 

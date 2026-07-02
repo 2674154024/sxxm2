@@ -30,11 +30,23 @@ public class StudentEntity {
     @TableField("school_id")
     private Long schoolId;
 
+    @TableField("school_name")
+    private String schoolName;
+
     @TableField("id_card_encrypt")
     private String idCardEncrypt;
 
     @TableField("phone_encrypt")
     private String phoneEncrypt;
+
+    @TableField("username")
+    private String username;
+
+    @TableField("nickname")
+    private String nickname;
+
+    @TableField("password")
+    private String password;
 
     @TableField("avatar_url")
     private String avatarUrl;
@@ -50,6 +62,24 @@ public class StudentEntity {
 
     @TableField("skill_tags")
     private String skillTags;
+
+    @TableField("gender")
+    private String gender;
+
+    @TableField("education")
+    private String education;
+
+    @TableField("work_experience")
+    private String workExperience;
+
+    @TableField("self_introduction")
+    private String selfIntroduction;
+
+    @TableField("major")
+    private String major;
+
+    @TableField("grade")
+    private String grade;
 
     @TableField("created_at")
     private LocalDateTime createdAt;

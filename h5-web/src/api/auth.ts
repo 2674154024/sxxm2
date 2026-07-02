@@ -14,10 +14,10 @@ export function phoneLogin(phone: string, code: string) {
   )
 }
 
-export function passwordLogin(phone: string, password: string) {
+export function passwordLogin(account: string, password: string) {
   return request.post<any, { code: number; message: string; data: { token: string; user_info: any } }>(
     '/v1/auth/password-login',
-    { phone, password }
+    { account, password }
   )
 }
 
@@ -31,5 +31,18 @@ export function register(phone: string, code: string, password: string, nickname
 export function getUserInfo() {
   return request.get<any, { code: number; message: string; data: any }>(
     '/v1/student/user/info'
+  )
+}
+
+export function studentVerify(data: {
+  realName: string
+  studentNo: string
+  schoolId: string
+  idCard: string
+  phone: string
+}) {
+  return request.post<any, { code: number; message: string; data: string }>(
+    '/v1/student/auth/register',
+    data
   )
 }

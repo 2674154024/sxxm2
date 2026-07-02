@@ -85,7 +85,11 @@ function goReport() {
 }
 
 function goCaseDetail(id: number) {
-  console.log('案例详情', id)
+  if (id === 0) {
+    router.push('/case')
+  } else {
+    router.push(`/case/${id}`)
+  }
 }
 </script>
 

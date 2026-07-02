@@ -12,6 +12,7 @@ const userStore = useUserStore()
 
 const loginType = ref<'sms' | 'password'>('sms')
 const phone = ref('')
+const account = ref('')
 const code = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -21,12 +22,13 @@ const loggingIn = ref(false)
 const countdown = ref(0)
 
 const phoneValid = computed(() => /^1[3-9]\d{9}$/.test(phone.value))
+const accountValid = computed(() => account.value.length >= 4 && account.value.length <= 20)
 const codeValid = computed(() => /^\d{4,6}$/.test(code.value))
 const passwordValid = computed(() => password.value.length >= 6 && password.value.length <= 20)
 const canSubmit = computed(() => {
-  if (!phoneValid.value || !agreed.value || loggingIn.value) return false
-  if (loginType.value === 'sms') return codeValid.value
-  return passwordValid.value
+  if (!agreed.value || loggingIn.value) return false
+  if (loginType.value === 'sms') return phoneValid.value && codeValid.value
+  return accountValid.value && passwordValid.value
 })
 
 let timer: any = null
@@ -84,11 +86,17 @@ async function handleLogin() {
     if (loginType.value === 'sms') {
       res = await phoneLogin(phone.value, code.value)
     } else {
-      res = await passwordLogin(phone.value, password.value)
+      res = await passwordLogin(account.value, password.value)
     }
     if (res.code === 200) {
       userStore.setToken(res.data.token)
-      userStore.setUserInfo(res.data.user_info)
+      userStore.setUserInfo({
+        user_id: res.data.userId,
+        role: res.data.role,
+        real_name: res.data.realName,
+        verify_status: res.data.verifyStatus,
+        credit_score: res.data.creditScore,
+      })
 
       showToast({
         message: '登录成功',
@@ -158,7 +166,7 @@ function handleGoBack() {
           </div>
         </div>
 
-        <div class="form-item">
+        <div class="form-item" v-if="loginType === 'sms'">
           <div class="input-group">
             <span class="prefix-text">+86</span>
             <input
@@ -172,6 +180,27 @@ function handleGoBack() {
               v-if="phone"
               class="clear-btn"
               @click="phone = ''"
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div class="form-item" v-else>
+          <div class="input-group">
+            <span class="prefix-icon">👤</span>
+            <input
+              v-model="account"
+              type="text"
+              class="text-input"
+              placeholder="请输入用户名"
+              maxlength="20"
+            />
+            <button
+              v-if="account"
+              class="clear-btn"
+              @click="account = ''"
               type="button"
             >
               ×
@@ -375,6 +404,12 @@ function handleGoBack() {
 .prefix-text {
   font-size: var(--font-size-base);
   color: var(--color-text);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.prefix-icon {
+  font-size: 18px;
   margin-right: 8px;
   flex-shrink: 0;
 }

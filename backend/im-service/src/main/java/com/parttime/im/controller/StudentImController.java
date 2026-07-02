@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -29,6 +30,9 @@ public class StudentImController {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
+        if (token == null || token.isEmpty() || !JwtUtil.validateToken(token)) {
+            return R.unauthorized("未授权，请先登录");
+        }
         String userId = JwtUtil.getUserId(token);
         imService.sendMessage(userId, request.getTargetId(), request.getContent(), request.getMessageType());
         return R.ok();
@@ -40,6 +44,9 @@ public class StudentImController {
         String token = httpRequest.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
+        }
+        if (token == null || token.isEmpty() || !JwtUtil.validateToken(token)) {
+            return R.ok(new ArrayList<>());
         }
         String userId = JwtUtil.getUserId(token);
         List<MessageResponse> messages = imService.getMessageHistory(userId, request.getTargetId(),
@@ -53,6 +60,9 @@ public class StudentImController {
         String token = httpRequest.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
+        }
+        if (token == null || token.isEmpty() || !JwtUtil.validateToken(token)) {
+            return R.ok(new ArrayList<>());
         }
         String userId = JwtUtil.getUserId(token);
         List<ConversationResponse> conversations = imService.getConversationList(userId);

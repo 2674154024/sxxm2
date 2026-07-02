@@ -32,6 +32,11 @@ export interface JobListParams {
   longitude?: number
   latitude?: number
   distance?: number
+  salary_min?: number
+  salary_max?: number
+  settlement_type?: number
+  is_insured?: number
+  work_time?: string
 }
 
 export interface JobListData {
@@ -42,34 +47,132 @@ export interface JobListData {
 }
 
 export function getJobList(params: JobListParams) {
+  const apiParams: any = {
+    page: params.page,
+    size: params.size,
+    industryTag: params.industry_tag,
+    keyword: params.keyword,
+    longitude: params.longitude,
+    latitude: params.latitude,
+    distance: params.distance,
+    salaryMin: params.salary_min,
+    salaryMax: params.salary_max,
+    settlementType: params.settlement_type,
+    isInsured: params.is_insured,
+    workTime: params.work_time,
+  }
+  Object.keys(apiParams).forEach((key) => {
+    if (apiParams[key] === undefined || apiParams[key] === null || apiParams[key] === '') {
+      delete apiParams[key]
+    }
+  })
   return request.get<any, { code: number; message: string; data: JobListData }>(
     '/v1/public/job/list',
-    { params }
-  )
+    { params: apiParams }
+  ).then((res: any) => {
+    if (res.code === 200 && res.data && res.data.list) {
+      res.data.list = res.data.list.map((item: any) => ({
+        job_id: item.jobId,
+        job_title: item.jobTitle,
+        salary_amount: item.salaryAmount,
+        work_address: item.workAddress,
+        distance: item.distance ? item.distance + 'km' : undefined,
+        industry_tag: item.industryTag,
+        settlement_type: item.settlementType,
+        is_insured: item.isInsured === 1,
+        recruit_num: 0,
+        current_num: 0,
+        skill_require: item.skillRequire || '',
+        job_desc: '',
+        enterprise_info: {
+          enterprise_id: '',
+          enterprise_name: item.enterpriseName || '',
+          is_certified: item.enterpriseCertified || false,
+          credit_score: item.enterpriseCreditScore || 0,
+        },
+        create_time: item.createdAt || '',
+      }))
+    }
+    return res
+  })
 }
 
 export function getJobDetail(jobId: string) {
-  return request.get<any, { code: number; message: string; data: JobItem }>(
+  return request.get<any, { code: number; message: string; data: any }>(
     '/v1/public/job/detail',
     {
       params: { job_id: jobId },
     }
-  )
+  ).then((res: any) => {
+    if (res.code === 200 && res.data) {
+      const item = res.data
+      res.data = {
+        job_id: item.jobId,
+        job_title: item.jobTitle,
+        salary_amount: item.salaryAmount,
+        work_address: item.workAddress,
+        distance: item.distance ? item.distance + 'km' : undefined,
+        industry_tag: item.industryTag,
+        settlement_type: item.settlementType,
+        is_insured: item.isInsured === 1,
+        recruit_num: item.recruitNum || 0,
+        current_num: item.currentNum || 0,
+        skill_require: item.skillRequire || '',
+        job_desc: item.jobDesc || '',
+        enterprise_info: {
+          enterprise_id: item.enterpriseId || '',
+          enterprise_name: item.enterpriseName || '',
+          is_certified: item.enterpriseCertified || false,
+          credit_score: item.enterpriseCreditScore || 0,
+        },
+        create_time: item.createdAt || '',
+      }
+    }
+    return res
+  })
 }
 
 export function getSimilarJobs(jobId: string, limit = 5) {
-  return request.get<any, { code: number; message: string; data: JobItem[] }>(
+  return request.get<any, { code: number; message: string; data: any[] }>(
     '/v1/public/job/similar',
     {
       params: { job_id: jobId, limit },
     }
-  )
+  ).then((res: any) => {
+    if (res.code === 200 && res.data) {
+      res.data = res.data.map((item: any) => ({
+        job_id: item.jobId,
+        job_title: item.jobTitle,
+        salary_amount: item.salaryAmount,
+        work_address: item.workAddress,
+        distance: item.distance ? item.distance + 'km' : undefined,
+        industry_tag: item.industryTag,
+        settlement_type: item.settlementType,
+        is_insured: item.isInsured === 1,
+        recruit_num: 0,
+        current_num: 0,
+        skill_require: item.skillRequire || '',
+        job_desc: '',
+        enterprise_info: {
+          enterprise_id: '',
+          enterprise_name: item.enterpriseName || '',
+          is_certified: item.enterpriseCertified || false,
+          credit_score: item.enterpriseCreditScore || 0,
+        },
+        create_time: item.createdAt || '',
+      }))
+    }
+    return res
+  })
 }
 
 export function applyJob(jobId: string) {
-  return request.post<any, { code: number; message: string; data: any }>(
-    '/v1/student/apply',
-    { job_id: jobId }
+  return request.post<any, { code: number; message: string; data: string }>(
+    '/v1/student/job/apply',
+    null,
+    {
+      params: { job_id: jobId },
+    }
   )
 }
 
@@ -97,7 +200,7 @@ export function getCategories() {
 
 export const mockJobList: JobItem[] = [
   {
-    job_id: '1',
+    job_id: 'job-001',
     job_title: '茶颜悦色门店店员',
     salary_amount: 18,
     work_address: '长沙市天心区黄兴南路步行商业街',
@@ -118,7 +221,7 @@ export const mockJobList: JobItem[] = [
     create_time: '2024-01-15 10:30',
   },
   {
-    job_id: '2',
+    job_id: 'job-002',
     job_title: '星巴克咖啡师',
     salary_amount: 22,
     work_address: '长沙市芙蓉区IFS国金中心',
@@ -139,7 +242,7 @@ export const mockJobList: JobItem[] = [
     create_time: '2024-01-14 14:20',
   },
   {
-    job_id: '3',
+    job_id: 'job-003',
     job_title: '优衣库店员',
     salary_amount: 19,
     work_address: '长沙市雨花区德思勤城市广场',
@@ -160,7 +263,7 @@ export const mockJobList: JobItem[] = [
     create_time: '2024-01-13 09:15',
   },
   {
-    job_id: '4',
+    job_id: 'job-004',
     job_title: '家教老师（数学）',
     salary_amount: 80,
     work_address: '长沙市岳麓区银盆岭',
@@ -181,7 +284,7 @@ export const mockJobList: JobItem[] = [
     create_time: '2024-01-12 16:45',
   },
   {
-    job_id: '5',
+    job_id: 'job-005',
     job_title: '会展兼职礼仪',
     salary_amount: 200,
     work_address: '长沙国际会展中心',
@@ -203,24 +306,62 @@ export const mockJobList: JobItem[] = [
   },
 ]
 
-export function getFavoriteList() {
-  return Promise.resolve<{ code: number; message: string; data: { list: JobItem[]; total: number } }>({
-    code: 200,
-    message: 'success',
-    data: {
-      list: mockJobList.slice(0, 3),
-      total: 3,
-    },
+export function getFavoriteList(params: { page?: number; size?: number }) {
+  return request.get<any, { code: number; message: string; data: JobListData }>(
+    '/v1/student/job/favorite/list',
+    { params }
+  ).then((res: any) => {
+    if (res.code === 200 && res.data && res.data.list) {
+      res.data.list = res.data.list.map((item: any) => ({
+        job_id: item.jobId,
+        job_title: item.jobTitle,
+        salary_amount: item.salaryAmount,
+        work_address: item.workAddress,
+        distance: item.distance ? item.distance + 'km' : undefined,
+        industry_tag: item.industryTag,
+        settlement_type: item.settlementType,
+        is_insured: item.isInsured === 1,
+        recruit_num: 0,
+        current_num: 0,
+        skill_require: item.skillRequire || '',
+        job_desc: '',
+        enterprise_info: {
+          enterprise_id: '',
+          enterprise_name: item.enterpriseName || '',
+          is_certified: item.enterpriseCertified || false,
+          credit_score: item.enterpriseCreditScore || 0,
+        },
+        create_time: item.createdAt || '',
+      }))
+    }
+    return res
   })
 }
 
 export function toggleFavorite(jobId: string) {
-  console.log('切换收藏状态:', jobId)
-  return Promise.resolve<{ code: number; message: string; data: { is_favorite: boolean } }>({
-    code: 200,
-    message: 'success',
-    data: {
-      is_favorite: true,
-    },
-  })
+  return request.post<any, { code: number; message: string; data: boolean }>(
+    '/v1/student/job/favorite/toggle',
+    null,
+    {
+      params: { job_id: jobId },
+    }
+  )
+}
+
+export function checkFavorite(jobId: string) {
+  return request.get<any, { code: number; message: string; data: boolean }>(
+    '/v1/student/job/favorite/check',
+    {
+      params: { job_id: jobId },
+    }
+  )
+}
+
+export function checkApplyStatus(jobId: string) {
+  return request.get<any, { code: number; message: string; data: boolean }>(
+    '/v1/student/job/apply/check',
+    {
+      params: { job_id: jobId },
+    }
+  )
 }

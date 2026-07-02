@@ -21,20 +21,23 @@ export const useEnterpriseStore = defineStore('enterprise', {
       this.token = token
       this.enterprise = enterprise
       this.isAuthenticated = true
-      localStorage.setItem('token', token)
+      localStorage.setItem('enterprise_token', token)
       localStorage.setItem('enterprise', JSON.stringify(enterprise))
+      localStorage.setItem('enterprise_role_type', '0')
     },
     logout() {
       this.token = null
       this.enterprise = null
       this.isAuthenticated = false
-      localStorage.removeItem('token')
+      localStorage.removeItem('enterprise_token')
       localStorage.removeItem('enterprise')
+      localStorage.removeItem('enterprise_role_type')
     },
     init() {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('enterprise_token')
       const enterpriseStr = localStorage.getItem('enterprise')
-      if (token && enterpriseStr) {
+      const roleType = localStorage.getItem('enterprise_role_type')
+      if (token && enterpriseStr && roleType === '0') {
         this.token = token
         this.enterprise = JSON.parse(enterpriseStr)
         this.isAuthenticated = true

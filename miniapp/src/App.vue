@@ -15,77 +15,18 @@ onHide(() => {
 </script>
 
 <style lang="scss">
+@import './styles/variables.scss';
+@import './styles/common.scss';
+
 page {
-  background-color: #F2F3F5;
+  background-color: var(--color-gray-light);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  line-height: var(--font-line-height-base);
 }
 
 view, text {
   box-sizing: border-box;
-}
-
-.container {
-  padding: 24rpx;
-}
-
-.flex {
-  display: flex;
-}
-
-.flex-column {
-  flex-direction: column;
-}
-
-.flex-center {
-  align-items: center;
-  justify-content: center;
-}
-
-.flex-between {
-  justify-content: space-between;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-primary {
-  color: #165DFF;
-}
-
-.text-gray {
-  color: #86909C;
-}
-
-.text-dark {
-  color: #1F2329;
-}
-
-.bg-white {
-  background-color: #FFFFFF;
-}
-
-.mt-24 {
-  margin-top: 24rpx;
-}
-
-.mb-24 {
-  margin-bottom: 24rpx;
-}
-
-.ml-24 {
-  margin-left: 24rpx;
-}
-
-.mr-24 {
-  margin-right: 24rpx;
-}
-
-.p-24 {
-  padding: 24rpx;
 }
 </style>

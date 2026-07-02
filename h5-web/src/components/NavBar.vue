@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
-
 defineProps<{
   title: string
   showBack?: boolean
@@ -11,14 +9,14 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'rightClick'): void
+  (e: 'back'): void
 }>()
 
+const router = useRouter()
+
 function handleBack() {
-  if (window.history.length > 1) {
-    router.back()
-  } else {
-    router.push('/')
-  }
+  emit('back')
+  router.back()
 }
 
 function handleRightClick() {

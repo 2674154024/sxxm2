@@ -13,7 +13,15 @@ const service: AxiosInstance = axios.create({
 
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token')
+    const path = config.url || ''
+    let token = ''
+    if (path.startsWith('/v1/pc/admin')) {
+      token = localStorage.getItem('admin_token') || ''
+    } else if (path.startsWith('/v1/pc/enterprise')) {
+      token = localStorage.getItem('enterprise_token') || ''
+    } else {
+      token = localStorage.getItem('admin_token') || localStorage.getItem('enterprise_token') || ''
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -32,14 +40,21 @@ service.interceptors.response.use(
     if (res.code === 200) {
       return res
     } else {
-      return Promise.reject(new Error(res.message || '请求失败'))
+      const error = new Error(res.message || '请求失败')
+      error.response = response
+      return Promise.reject(error)
     }
   },
   (error) => {
     const status = error.response?.status
-    if (status === 401) {
-      localStorage.removeItem('token')
-      location.href = '/'
+    const data = error.response?.data
+    if (status === 401 || (data && data.code === 401)) {
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_role_type')
+      localStorage.removeItem('admin')
+      localStorage.removeItem('enterprise_token')
+      localStorage.removeItem('enterprise_role_type')
+      localStorage.removeItem('enterprise')
     } else if (status === 403) {
       console.error('无权限')
     } else if (status === 500) {

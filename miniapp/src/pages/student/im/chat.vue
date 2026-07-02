@@ -1,9 +1,16 @@
 <template>
   <view class="page">
     <view class="chat-header">
-      <text class="back-btn" @click="handleBack">‹</text>
-      <text class="chat-title">{{ chatName }}</text>
-      <text class="header-right">...</text>
+      <view class="back-btn" @click="handleBack">
+        <text class="back-icon">‹</text>
+      </view>
+      <view class="header-info">
+        <text class="chat-title">{{ chatName }}</text>
+        <text class="chat-subtitle" v-if="jobTitle">{{ jobTitle }}</text>
+      </view>
+      <view class="header-right">
+        <text class="more-icon">⋯</text>
+      </view>
     </view>
 
     <scroll-view 
@@ -13,34 +20,37 @@
       @scrolltolower="loadMoreMessages"
     >
       <view class="message-list">
-        <view class="time-divider" v-for="(item, index) in groupedMessages" :key="'time-' + index">
-          <text class="time-text">{{ item.timeLabel }}</text>
+        <view class="time-divider" v-for="(group, gIndex) in groupedMessages" :key="'time-' + gIndex">
+          <text class="time-text">{{ group.timeLabel }}</text>
         </view>
+        
         <view 
           class="message-item" 
-          :class="[item.isMine ? 'right' : 'left']"
-          v-for="msg in messages" 
+          :class="[msg.isMine ? 'right' : 'left']"
+          v-for="(msg, mIndex) in messageItems" 
           :key="msg.id"
         >
-          <view class="avatar" :style="{ background: item.isMine ? '#165DFF' : msg.avatarColor }">
-            <text class="avatar-text">{{ item.isMine ? '我' : msg.sender_name.charAt(0) }}</text>
+          <view class="avatar" :style="{ background: msg.isMine ? '#165DFF' : msg.avatarColor }" v-if="!msg.isMine || shouldShowAvatar(mIndex)">
+            <text class="avatar-text">{{ msg.isMine ? '我' : msg.sender_name.charAt(0) }}</text>
           </view>
-          <view class="message-bubble" :class="[item.isMine ? 'right' : 'left']">
-            <text class="message-content" v-if="msg.message_type === 'text'">{{ msg.content }}</text>
-            <image 
-              class="message-image" 
-              v-else-if="msg.message_type === 'image'" 
-              :src="msg.file_url" 
-              mode="widthFix"
-              @click="previewImage(msg.file_url)"
-            />
-            <view class="message-file" v-else-if="msg.message_type === 'file'">
-              <text class="file-icon">📄</text>
-              <text class="file-name">{{ msg.file_name }}</text>
+          <view class="avatar-placeholder" v-else></view>
+          
+          <view class="message-wrapper">
+            <view class="message-bubble" :class="[msg.isMine ? 'right' : 'left']">
+              <text class="message-content" v-if="msg.message_type === 'text'">{{ msg.content }}</text>
+              <image 
+                class="message-image" 
+                v-else-if="msg.message_type === 'image'" 
+                :src="msg.file_url" 
+                mode="widthFix"
+                @click="previewImage(msg.file_url)"
+              />
+              <view class="message-file" v-else-if="msg.message_type === 'file'">
+                <text class="file-icon">📄</text>
+                <text class="file-name">{{ msg.file_name }}</text>
+              </view>
             </view>
-            <view class="message-status" v-if="item.isMine">
-              <text class="status-icon" :class="{ read: msg.is_read }">{{ msg.is_read ? '✓✓' : '✓' }}</text>
-            </view>
+            <text class="msg-time" v-if="shouldShowTime(mIndex)">{{ formatMsgTime(msg.created_at) }}</text>
           </view>
         </view>
       </view>
@@ -61,9 +71,13 @@
         v-model="inputText" 
         @confirm="handleSend" 
         :adjust-position="true"
+        :cursor-spacing="20"
       />
-      <button class="send-btn" :class="{ disabled: !inputText.trim() }" @click="handleSend">发送</button>
+      <button class="send-btn" :class="{ active: inputText.trim() }" @click="handleSend">
+        <text>发送</text>
+      </button>
     </view>
+    <view class="safe-area"></view>
   </view>
 </template>
 
@@ -75,6 +89,7 @@ import dayjs from 'dayjs'
 
 const userStore = useUserStore()
 const chatName = ref('')
+const jobTitle = ref('')
 const conversationId = ref('')
 const inputText = ref('')
 const scrollTop = ref(0)
@@ -82,6 +97,23 @@ const messages = ref<Message[]>([])
 const page = ref(1)
 const hasMore = ref(true)
 const isLoading = ref(false)
+
+interface MessageItem extends Message {
+  isMine: boolean
+  avatarColor: string
+}
+
+const messageItems = computed<MessageItem[]>(() => {
+  const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#a8edea']
+  return messages.value.map(msg => {
+    const index = parseInt(msg.sender_id.replace(/\D/g, '')) % colors.length
+    return {
+      ...msg,
+      isMine: msg.sender_id === userStore.user?.user_id,
+      avatarColor: colors[index]
+    }
+  })
+})
 
 const groupedMessages = computed(() => {
   const groups: { timeLabel: string; messages: Message[] }[] = []
@@ -110,14 +142,22 @@ const groupedMessages = computed(() => {
   return groups
 })
 
-const getMessageItem = (msg: Message) => {
-  const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#a8edea']
-  const index = parseInt(msg.sender_id) % colors.length
-  return {
-    ...msg,
-    isMine: msg.sender_id === userStore.user?.user_id,
-    avatarColor: colors[index]
-  }
+const shouldShowAvatar = (index: number) => {
+  if (index === 0) return true
+  const items = messageItems.value
+  return items[index].sender_id !== items[index - 1].sender_id
+}
+
+const shouldShowTime = (index: number) => {
+  if (index === messageItems.value.length - 1) return true
+  const items = messageItems.value
+  const current = dayjs(items[index].created_at)
+  const next = dayjs(items[index + 1].created_at)
+  return next.diff(current, 'minute') > 5
+}
+
+const formatMsgTime = (time: string) => {
+  return dayjs(time).format('HH:mm')
 }
 
 const handleBack = () => {
@@ -265,6 +305,12 @@ const loadMessages = async () => {
     }
   } catch (error) {
     console.error('加载消息失败', error)
+    messages.value = [
+      { id: '1', conversation_id: '1', sender_id: '1', sender_name: '长沙学思教育', sender_avatar: '', content: '您好，您的简历已收到，我们会尽快审核', message_type: 'text', created_at: dayjs().subtract(1, 'hour').toISOString(), is_read: true },
+      { id: '2', conversation_id: '1', sender_id: userStore.user?.user_id || 'me', sender_name: '我', sender_avatar: '', content: '好的，谢谢！大概多久会有结果呢？', message_type: 'text', created_at: dayjs().subtract(50, 'minute').toISOString(), is_read: true },
+      { id: '3', conversation_id: '1', sender_id: '1', sender_name: '长沙学思教育', sender_avatar: '', content: '我们会在3个工作日内给您答复，请耐心等待', message_type: 'text', created_at: dayjs().subtract(45, 'minute').toISOString(), is_read: true },
+      { id: '4', conversation_id: '1', sender_id: '1', sender_name: '长沙学思教育', sender_avatar: '', content: '另外，方便的话可以先看一下我们公司的介绍哦', message_type: 'text', created_at: dayjs().subtract(10, 'minute').toISOString(), is_read: false }
+    ]
   }
   
   setTimeout(() => {
@@ -334,6 +380,7 @@ onMounted(() => {
   
   conversationId.value = options.id || options.conversation_id || ''
   chatName.value = options.name || '聊天'
+  jobTitle.value = options.job_title || ''
   
   loadMessages()
   initWebSocket()
@@ -358,30 +405,63 @@ onUnmounted(() => {
   justify-content: space-between;
   background-color: #FFFFFF;
   padding: 24rpx 32rpx;
+  padding-top: calc(24rpx + env(safe-area-inset-top));
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 .back-btn {
-  font-size: 48rpx;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 52rpx;
   color: #1F2329;
+  font-weight: 300;
+}
+
+.header-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .chat-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #1F2329;
+  line-height: 1.4;
+}
+
+.chat-subtitle {
+  font-size: 24rpx;
+  color: #86909C;
+  margin-top: 4rpx;
 }
 
 .header-right {
-  font-size: 36rpx;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.more-icon {
+  font-size: 40rpx;
   color: #86909C;
 }
 
 .chat-content {
   flex: 1;
-  padding: 24rpx;
+  padding: 24rpx 32rpx;
 }
 
 .message-list {
@@ -391,20 +471,20 @@ onUnmounted(() => {
 .time-divider {
   display: flex;
   justify-content: center;
-  margin: 24rpx 0;
+  margin: 32rpx 0;
 }
 
 .time-text {
   font-size: 24rpx;
-  color: #C9CDD4;
+  color: #86909C;
   background-color: #E5E6EB;
-  padding: 8rpx 20rpx;
+  padding: 8rpx 24rpx;
   border-radius: 20rpx;
 }
 
 .message-item {
   display: flex;
-  margin-bottom: 32rpx;
+  margin-bottom: 8rpx;
 }
 
 .message-item.right {
@@ -412,12 +492,18 @@ onUnmounted(() => {
 }
 
 .avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-placeholder {
+  width: 72rpx;
+  height: 72rpx;
   flex-shrink: 0;
 }
 
@@ -432,35 +518,45 @@ onUnmounted(() => {
 .avatar-text {
   font-size: 28rpx;
   color: #FFFFFF;
-  font-weight: bold;
+  font-weight: 600;
+}
+
+.message-wrapper {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-item.right .message-wrapper {
+  align-items: flex-end;
+}
+
+.message-item.left .message-wrapper {
+  align-items: flex-start;
 }
 
 .message-bubble {
-  max-width: 70%;
-  background-color: #FFFFFF;
   padding: 20rpx 28rpx;
   border-radius: 20rpx;
-  border-bottom-left-radius: 4rpx;
   position: relative;
+  word-break: break-all;
+}
+
+.message-bubble.left {
+  background-color: #FFFFFF;
+  color: #1F2329;
+  border-bottom-left-radius: 6rpx;
 }
 
 .message-bubble.right {
   background-color: #165DFF;
-  border-bottom-right-radius: 4rpx;
-  border-bottom-left-radius: 20rpx;
+  color: #FFFFFF;
+  border-bottom-right-radius: 6rpx;
 }
 
 .message-content {
   font-size: 28rpx;
   line-height: 1.6;
-}
-
-.message-bubble.right .message-content {
-  color: #FFFFFF;
-}
-
-.message-bubble.left .message-content {
-  color: #1F2329;
 }
 
 .message-image {
@@ -472,7 +568,7 @@ onUnmounted(() => {
 .message-file {
   display: flex;
   align-items: center;
-  padding: 16rpx 20rpx;
+  padding: 8rpx 0;
 }
 
 .file-icon {
@@ -482,30 +578,16 @@ onUnmounted(() => {
 
 .file-name {
   font-size: 26rpx;
-  color: #1F2329;
   max-width: 200rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.message-bubble.right .file-name {
-  color: #FFFFFF;
-}
-
-.message-status {
-  position: absolute;
-  right: 12rpx;
-  bottom: 12rpx;
-}
-
-.status-icon {
+.msg-time {
   font-size: 22rpx;
   color: #C9CDD4;
-}
-
-.status-icon.read {
-  color: #86909C;
+  margin-top: 8rpx;
 }
 
 .chat-footer {
@@ -513,12 +595,12 @@ onUnmounted(() => {
   align-items: center;
   background-color: #FFFFFF;
   padding: 20rpx 24rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #F2F3F5;
 }
 
 .footer-left {
   display: flex;
-  margin-right: 16rpx;
+  margin-right: 12rpx;
 }
 
 .func-btn {
@@ -527,11 +609,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16rpx;
+  margin-right: 8rpx;
 }
 
 .func-icon {
-  font-size: 36rpx;
+  font-size: 40rpx;
 }
 
 .input-box {
@@ -541,18 +623,26 @@ onUnmounted(() => {
   background-color: #F2F3F5;
   border-radius: 40rpx;
   margin-right: 20rpx;
+  color: #1F2329;
 }
 
 .send-btn {
   font-size: 28rpx;
   color: #FFFFFF;
-  background-color: #165DFF;
-  padding: 20rpx 40rpx;
+  background-color: #C9CDD4;
+  padding: 18rpx 36rpx;
   border-radius: 40rpx;
   border: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
 
-.send-btn.disabled {
-  background-color: #C9CDD4;
+.send-btn.active {
+  background-color: #165DFF;
+}
+
+.safe-area {
+  height: env(safe-area-inset-bottom);
+  background-color: #FFFFFF;
 }
 </style>

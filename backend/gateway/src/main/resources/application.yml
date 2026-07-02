@@ -10,11 +10,27 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
   cloud:
     gateway:
+      globalcors:
+        enabled: false
       routes:
         - id: auth-route
           uri: http://localhost:8081
           predicates:
             - Path=/v1/auth/**
+          filters:
+            - StripPrefix=0
+
+        - id: student-job-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/v1/student/job/**
+          filters:
+            - StripPrefix=0
+
+        - id: complaint-route
+          uri: http://localhost:8087
+          predicates:
+            - Path=/v1/complaint/**,/v1/student/complaint/**,/v1/student/feedback/**,/uploads/complaint/**
           filters:
             - StripPrefix=0
 
@@ -25,10 +41,24 @@ spring:
           filters:
             - StripPrefix=0
 
-        - id: enterprise-route
+        - id: pc-enterprise-job-route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/v1/pc/enterprise/job/**
+          filters:
+            - StripPrefix=0
+
+        - id: enterprise-api-route
           uri: http://localhost:8081
           predicates:
-            - Path=/v1/enterprise/**
+            - Path=/v1/enterprise/api/**,/v1/enterprise/auth/**,/v1/enterprise/profile/**
+          filters:
+            - StripPrefix=0
+
+        - id: safety-route
+          uri: http://localhost:8081
+          predicates:
+            - Path=/v1/safety/**
           filters:
             - StripPrefix=0
 
@@ -74,13 +104,6 @@ spring:
           filters:
             - StripPrefix=0
 
-        - id: complaint-route
-          uri: http://localhost:8087
-          predicates:
-            - Path=/v1/complaint/**
-          filters:
-            - StripPrefix=0
-
         - id: notification-route
           uri: http://localhost:8088
           predicates:
@@ -108,15 +131,18 @@ spring:
     password: ${REDIS_PASSWORD:}
     timeout: 10000ms
 
+jwt:
+  secret: ${JWT_SECRET:parttime-platform-jwt-secret-2024}
+
 rate-limit:
   public-api:
-    max-requests: 10
+    max-requests: 200
     time-window: 60000
   core-api:
-    max-requests: 5
+    max-requests: 100
     time-window: 60000
   admin-api:
-    max-requests: 20
+    max-requests: 50
     time-window: 60000
 
 cors:

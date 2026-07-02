@@ -1,0 +1,443 @@
+{
+  "results": [
+    {
+      "page": "管理后台-企业审核",
+      "url": "http://localhost:5173/admin/audit/enterprise",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 0,
+      "buttons": 8,
+      "inputs": 6,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-企业审核.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "管理后台-岗位审核",
+      "url": "http://localhost:5173/admin/audit/job",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 0,
+      "buttons": 8,
+      "inputs": 6,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-岗位审核.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "管理后台-投诉工单",
+      "url": "http://localhost:5173/admin/risk/complaint",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 0,
+      "buttons": 8,
+      "inputs": 7,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-投诉工单.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "管理后台-风控看板",
+      "url": "http://localhost:5173/admin/risk/dashboard",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 3,
+      "console_warnings": 0,
+      "buttons": 3,
+      "inputs": 1,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-风控看板.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙",
+        "加载数据失败"
+      ]
+    },
+    {
+      "page": "管理后台-结算管理",
+      "url": "http://localhost:5173/admin/finance/settlement",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 0,
+      "buttons": 3,
+      "inputs": 1,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-结算管理.png",
+      "error_samples": []
+    },
+    {
+      "page": "管理后台-财务报表",
+      "url": "http://localhost:5173/admin/finance/report",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 1,
+      "buttons": 8,
+      "inputs": 3,
+      "tables": 4,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-财务报表.png",
+      "error_samples": []
+    },
+    {
+      "page": "管理后台-运营报表",
+      "url": "http://localhost:5173/admin/operation/report",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 0,
+      "buttons": 8,
+      "inputs": 3,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-运营报表.png",
+      "error_samples": []
+    },
+    {
+      "page": "管理后台-通知管理",
+      "url": "http://localhost:5173/admin/operation/notification",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 0,
+      "buttons": 6,
+      "inputs": 3,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-通知管理.png",
+      "error_samples": []
+    },
+    {
+      "page": "管理后台-系统配置",
+      "url": "http://localhost:5173/admin/system/config",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 3,
+      "console_warnings": 0,
+      "buttons": 5,
+      "inputs": 6,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-系统配置.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙",
+        "加载配置失败"
+      ]
+    },
+    {
+      "page": "管理后台-角色权限",
+      "url": "http://localhost:5173/admin/system/roles",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 5,
+      "console_warnings": 0,
+      "buttons": 6,
+      "inputs": 3,
+      "tables": 4,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-角色权限.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ]
+    },
+    {
+      "page": "管理后台-审计日志",
+      "url": "http://localhost:5173/admin/system/audit-log",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 0,
+      "buttons": 21,
+      "inputs": 7,
+      "tables": 4,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\管理后台-审计日志.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-数据看板",
+      "url": "http://localhost:5173/enterprise/dashboard",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 8,
+      "console_warnings": 2,
+      "buttons": 7,
+      "inputs": 2,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-数据看板.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ]
+    },
+    {
+      "page": "企业端-岗位列表",
+      "url": "http://localhost:5173/enterprise/job/list",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 20,
+      "buttons": 22,
+      "inputs": 3,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-岗位列表.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-发布岗位",
+      "url": "http://localhost:5173/enterprise/job/publish",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 2,
+      "buttons": 5,
+      "inputs": 11,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-发布岗位.png",
+      "error_samples": []
+    },
+    {
+      "page": "企业端-批量导入",
+      "url": "http://localhost:5173/enterprise/job/batch-import",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 7,
+      "buttons": 4,
+      "inputs": 1,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-批量导入.png",
+      "error_samples": []
+    },
+    {
+      "page": "企业端-投递管理",
+      "url": "http://localhost:5173/enterprise/talent/apply",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 2,
+      "buttons": 17,
+      "inputs": 3,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-投递管理.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-人才库",
+      "url": "http://localhost:5173/enterprise/talent/library",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 24,
+      "buttons": 18,
+      "inputs": 6,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-人才库.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-排班管理",
+      "url": "http://localhost:5173/enterprise/schedule",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 4,
+      "console_warnings": 12,
+      "buttons": 8,
+      "inputs": 0,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-排班管理.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙",
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ]
+    },
+    {
+      "page": "企业端-薪资核算",
+      "url": "http://localhost:5173/enterprise/salary/calculate",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 8,
+      "buttons": 17,
+      "inputs": 4,
+      "tables": 3,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-薪资核算.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-发放记录",
+      "url": "http://localhost:5173/enterprise/salary/records",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 2,
+      "buttons": 12,
+      "inputs": 4,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-发放记录.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-对账单",
+      "url": "http://localhost:5173/enterprise/finance/statement",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 6,
+      "buttons": 16,
+      "inputs": 3,
+      "tables": 3,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-对账单.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-发票管理",
+      "url": "http://localhost:5173/enterprise/finance/invoice",
+      "status": "有错误",
+      "has_content": true,
+      "console_errors": 2,
+      "console_warnings": 6,
+      "buttons": 13,
+      "inputs": 3,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-发票管理.png",
+      "error_samples": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+        "系统繁忙"
+      ]
+    },
+    {
+      "page": "企业端-协议管理",
+      "url": "http://localhost:5173/enterprise/agreement",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 0,
+      "buttons": 15,
+      "inputs": 0,
+      "tables": 0,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-协议管理.png",
+      "error_samples": []
+    },
+    {
+      "page": "企业端-设置",
+      "url": "http://localhost:5173/enterprise/settings",
+      "status": "正常",
+      "has_content": true,
+      "console_errors": 0,
+      "console_warnings": 0,
+      "buttons": 11,
+      "inputs": 29,
+      "tables": 2,
+      "links": 0,
+      "screenshot": "d:\\sxxm2\\screenshots\\企业端-设置.png",
+      "error_samples": []
+    }
+  ],
+  "issues": [
+    "管理后台-企业审核 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-企业审核 - 控制台错误: 系统繁忙",
+    "管理后台-岗位审核 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-岗位审核 - 控制台错误: 系统繁忙",
+    "管理后台-投诉工单 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-投诉工单 - 控制台错误: 系统繁忙",
+    "管理后台-风控看板 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-风控看板 - 控制台错误: 系统繁忙",
+    "管理后台-风控看板 - 控制台错误: 加载数据失败",
+    "管理后台-系统配置 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-系统配置 - 控制台错误: 系统繁忙",
+    "管理后台-系统配置 - 控制台错误: 加载配置失败",
+    "管理后台-角色权限 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-角色权限 - 控制台错误: 系统繁忙",
+    "管理后台-角色权限 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-角色权限 - 控制台错误: 系统繁忙",
+    "管理后台-角色权限 - 控制台错误: 加载角色失败",
+    "管理后台-审计日志 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "管理后台-审计日志 - 控制台错误: 系统繁忙",
+    "企业端-数据看板 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-数据看板 - 控制台错误: 系统繁忙",
+    "企业端-数据看板 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-数据看板 - 控制台错误: 系统繁忙",
+    "企业端-数据看板 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-岗位列表 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-岗位列表 - 控制台错误: 系统繁忙",
+    "企业端-投递管理 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-投递管理 - 控制台错误: 系统繁忙",
+    "企业端-人才库 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-人才库 - 控制台错误: 系统繁忙",
+    "企业端-排班管理 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-排班管理 - 控制台错误: 系统繁忙",
+    "企业端-排班管理 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-排班管理 - 控制台错误: 系统繁忙",
+    "企业端-薪资核算 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-薪资核算 - 控制台错误: 系统繁忙",
+    "企业端-发放记录 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-发放记录 - 控制台错误: 系统繁忙",
+    "企业端-对账单 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-对账单 - 控制台错误: 系统繁忙",
+    "企业端-发票管理 - 控制台错误: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "企业端-发票管理 - 控制台错误: 系统繁忙"
+  ],
+  "summary": {
+    "total": 24,
+    "normal": 8,
+    "errors": 16,
+    "issue_count": 42
+  }
+}

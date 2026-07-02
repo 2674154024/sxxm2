@@ -2,6 +2,7 @@ package com.parttime.gateway.filter;
 
 import com.parttime.common.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -27,6 +28,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private static final String AUTH_PATH_PREFIX = "/v1/auth/";
     private static final String PUBLIC_PATH_PREFIX = "/v1/public/";
+    private static final String UPLOAD_PATH_PREFIX = "/uploads/";
 
     private final ObjectMapper objectMapper;
 
@@ -34,8 +36,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
+        String method = request.getMethodValue();
+        log.debug("请求路径: {}, 请求方法: {}", path, method);
 
-        if (isWhiteList(path)) {
+        if (isWhiteList(path) || "OPTIONS".equalsIgnoreCase(method)) {
+            log.debug("路径在白名单或OPTIONS请求，直接放行");
             return chain.filter(exchange);
         }
 
@@ -47,8 +52,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
         String token = authorization.substring(7);
         try {
-            if (!JwtUtil.validateToken(token)) {
-                log.warn("Token无效或已过期: {}", path);
+            Claims claims = JwtUtil.parseToken(token);
+            if (claims.getExpiration().before(new java.util.Date())) {
+                log.warn("Token已过期: {}", path);
                 return unauthorized(exchange);
             }
 
@@ -60,26 +66,26 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     .header("X-User-Id", userId)
                     .header("X-Role", role)
                     .header("X-Permissions", permissions)
+                    .header("Authorization", authorization)
                     .build();
 
             log.debug("Token验证通过: userId={}, role={}, path={}", userId, role, path);
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
 
         } catch (Exception e) {
-            log.warn("Token解析失败: {}", e.getMessage());
+            log.warn("Token解析失败: {}", e.getMessage(), e);
             return unauthorized(exchange);
         }
     }
 
     private boolean isWhiteList(String path) {
         return path.startsWith(AUTH_PATH_PREFIX) || path.startsWith(PUBLIC_PATH_PREFIX)
-<<<<<<< HEAD
+                || path.startsWith(UPLOAD_PATH_PREFIX)
                 || path.contains("/auth/register") || path.contains("/auth/login")
                 || path.contains("/auth/sms-code") || path.contains("/auth/wechat")
-                || path.equals("/v1/pc/admin/login");
-=======
-                || path.contains("/auth/register") || path.contains("/auth/login");
->>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
+                || path.equals("/v1/pc/admin/login")
+                || path.equals("/v1/pc/admin/enterprise/login")
+                || path.equals("/v1/pc/admin/enterprise/register");
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {

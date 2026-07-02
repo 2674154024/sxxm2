@@ -74,7 +74,7 @@ function handleCancel(applyId: number) {
 }
 
 function goJobDetail(jobId: number) {
-  router.push(`/job/detail/${jobId}`)
+  router.push(`/job/job-${String(jobId).padStart(3, '0')}`)
 }
 
 onMounted(() => {

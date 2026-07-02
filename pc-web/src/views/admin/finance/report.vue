@@ -85,7 +85,7 @@ onMounted(() => {
           <div class="stat-header">总收入</div>
           <div class="stat-value">¥{{ revenueStats.totalIncome.toLocaleString() }}</div>
           <div class="stat-trend trend-up">
-            <TrendingUp />
+            <ArrowUp />
             <span>+15.2%</span>
           </div>
         </ElCard>
@@ -95,7 +95,7 @@ onMounted(() => {
           <div class="stat-header">总支出</div>
           <div class="stat-value">¥{{ revenueStats.totalExpense.toLocaleString() }}</div>
           <div class="stat-trend">
-            <TrendingUp />
+            <ArrowUp />
             <span>+8.5%</span>
           </div>
         </ElCard>

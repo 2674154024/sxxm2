@@ -1,0 +1,67 @@
+:root {
+  --color-primary: #165DFF;
+  --color-primary-light: #3C7EFF;
+  --color-primary-dark: #0E42D2;
+  --color-primary-bg: #E8F0FE;
+
+  --color-accent: #FF7D00;
+  --color-accent-light: #FF9A2E;
+
+  --color-success: #00B42A;
+  --color-success-bg: #E8FFEA;
+  --color-danger: #F53F3F;
+  --color-danger-bg: #FFF1F0;
+  --color-warning: #FF7D00;
+  --color-warning-bg: #FFF7E6;
+
+  --color-bg: #FFFFFF;
+  --color-bg-secondary: #F2F3F5;
+  --color-bg-tertiary: #E5E6EB;
+  --color-text: #4E5969;
+  --color-text-secondary: #86909C;
+  --color-text-disabled: #C9CDD4;
+  --color-border: #E5E6EB;
+
+  --font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
+  --font-size-title: 24px;
+
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-base: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  --btn-height: 36px;
+  --btn-radius: 8px;
+
+  --input-height: 36px;
+  --input-radius: 8px;
+
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --tabbar-height: 56px;
+  --page-min-width: 1024px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-base: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}

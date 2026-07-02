@@ -2,6 +2,7 @@ package com.parttime.admin.controller;
 
 import com.parttime.admin.dto.request.AdminLoginRequest;
 import com.parttime.admin.dto.response.AdminLoginResponse;
+import com.parttime.admin.dto.response.AdminProfileResponse;
 import com.parttime.admin.service.AdminService;
 import com.parttime.common.annotation.AuditLog;
 import com.parttime.common.response.R;
@@ -24,6 +25,12 @@ public class AdminController {
                                        HttpServletRequest httpRequest) {
         String ip = httpRequest.getRemoteAddr();
         AdminLoginResponse response = adminService.login(request, ip);
+        return R.ok(response);
+    }
+
+    @GetMapping("/profile")
+    public R<AdminProfileResponse> getProfile(@RequestParam("adminId") String adminId) {
+        AdminProfileResponse response = adminService.getProfile(adminId);
         return R.ok(response);
     }
 }

@@ -7,6 +7,8 @@ public class StudentProfileUpdateRequest {
 
     private String realName;
 
+    private String nickname;
+
     private String avatarUrl;
 
     private String availableTime;

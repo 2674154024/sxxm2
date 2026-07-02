@@ -22,23 +22,23 @@ export const useAdminStore = defineStore('admin', {
       this.admin = admin
       this.adminRoleType = admin.role_type
       this.isAuthenticated = true
-      localStorage.setItem('token', token)
+      localStorage.setItem('admin_token', token)
       localStorage.setItem('admin', JSON.stringify(admin))
-      localStorage.setItem('roleType', String(admin.role_type))
+      localStorage.setItem('admin_role_type', String(admin.role_type))
     },
     logout() {
       this.token = null
       this.admin = null
       this.adminRoleType = 0
       this.isAuthenticated = false
-      localStorage.removeItem('token')
+      localStorage.removeItem('admin_token')
       localStorage.removeItem('admin')
-      localStorage.removeItem('roleType')
+      localStorage.removeItem('admin_role_type')
     },
     init() {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('admin_token')
       const adminStr = localStorage.getItem('admin')
-      const roleType = localStorage.getItem('roleType')
+      const roleType = localStorage.getItem('admin_role_type')
       if (token && adminStr) {
         this.token = token
         this.admin = JSON.parse(adminStr)

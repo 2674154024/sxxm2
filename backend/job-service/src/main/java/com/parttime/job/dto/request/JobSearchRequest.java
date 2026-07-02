@@ -23,6 +23,10 @@ public class JobSearchRequest {
 
     private String keyword;
 
+    private Integer isInsured;
+
+    private String workTime;
+
     private Integer page = 1;
 
     private Integer size = 10;

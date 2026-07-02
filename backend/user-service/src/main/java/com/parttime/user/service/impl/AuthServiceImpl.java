@@ -5,8 +5,10 @@ import com.parttime.common.annotation.AuditLog;
 import com.parttime.common.exception.BusinessException;
 import com.parttime.common.util.AesUtil;
 import com.parttime.common.util.JwtUtil;
+import com.parttime.user.dto.request.PasswordLoginRequest;
 import com.parttime.user.dto.request.PhoneLoginRequest;
 import com.parttime.user.dto.request.SmsCodeRequest;
+import com.parttime.user.dto.request.StudentUserRegisterRequest;
 import com.parttime.user.dto.request.WechatLoginRequest;
 import com.parttime.user.dto.response.LoginResponse;
 import com.parttime.user.entity.StudentEntity;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -99,6 +102,89 @@ public class AuthServiceImpl implements AuthService {
         }
 
         redisTemplate.delete(redisKey);
+
+        String token = JwtUtil.generateToken(student.getId(), "student", Arrays.asList("student:read", "student:write"));
+
+        return LoginResponse.builder()
+                .token(token)
+                .userId(student.getId())
+                .role("student")
+                .realName(student.getRealName())
+                .verifyStatus(student.getVerifyStatus())
+                .creditScore(student.getCreditScore())
+                .build();
+    }
+
+    @Override
+    @AuditLog(module = "用户认证", action = "密码登录")
+    @Transactional
+    public LoginResponse passwordLogin(PasswordLoginRequest request) {
+        LambdaQueryWrapper<StudentEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StudentEntity::getUsername, request.getAccount());
+        StudentEntity student = studentMapper.selectOne(wrapper);
+
+        if (student == null) {
+            throw new BusinessException("账号或密码错误");
+        }
+
+        if (student.getPassword() == null) {
+            throw new BusinessException("该账号未设置密码，请使用手机号验证码登录");
+        }
+
+        String encryptedPassword = DigestUtils.md5DigestAsHex(request.getPassword().getBytes());
+        if (!encryptedPassword.equals(student.getPassword())) {
+            throw new BusinessException("账号或密码错误");
+        }
+
+        String token = JwtUtil.generateToken(student.getId(), "student", Arrays.asList("student:read", "student:write"));
+
+        return LoginResponse.builder()
+                .token(token)
+                .userId(student.getId())
+                .role("student")
+                .realName(student.getRealName())
+                .verifyStatus(student.getVerifyStatus())
+                .creditScore(student.getCreditScore())
+                .build();
+    }
+
+    @Override
+    @AuditLog(module = "用户认证", action = "学生注册")
+    @Transactional
+    public LoginResponse register(StudentUserRegisterRequest request) {
+        LambdaQueryWrapper<StudentEntity> usernameWrapper = new LambdaQueryWrapper<>();
+        usernameWrapper.eq(StudentEntity::getUsername, request.getUsername());
+        StudentEntity existingStudent = studentMapper.selectOne(usernameWrapper);
+
+        if (existingStudent != null) {
+            throw new BusinessException("用户名已存在");
+        }
+
+        if (request.getPhone() != null && !request.getPhone().isEmpty()) {
+            LambdaQueryWrapper<StudentEntity> phoneWrapper = new LambdaQueryWrapper<>();
+            phoneWrapper.eq(StudentEntity::getPhoneEncrypt, AesUtil.encrypt(request.getPhone()));
+            StudentEntity phoneStudent = studentMapper.selectOne(phoneWrapper);
+            if (phoneStudent != null) {
+                throw new BusinessException("该手机号已注册");
+            }
+        }
+
+        String encryptedPassword = DigestUtils.md5DigestAsHex(request.getPassword().getBytes());
+
+        StudentEntity student = StudentEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .username(request.getUsername())
+                .password(encryptedPassword)
+                .verifyStatus(0)
+                .creditScore(100)
+                .build();
+
+        if (request.getPhone() != null && !request.getPhone().isEmpty()) {
+            student.setPhoneEncrypt(AesUtil.encrypt(request.getPhone()));
+        }
+
+        studentMapper.insert(student);
+        log.info("学生注册成功: {}", student.getId());
 
         String token = JwtUtil.generateToken(student.getId(), "student", Arrays.asList("student:read", "student:write"));
 

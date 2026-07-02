@@ -25,15 +25,28 @@ service.interceptors.response.use(
     const res = response.data
     if (res.code === 200) {
       return res
+    } else if (res.code === 401) {
+      return Promise.reject(new Error(res.message || '登录已过期'))
     } else {
       return Promise.reject(new Error(res.message || '请求失败'))
     }
   },
   (error) => {
+    console.error('Request Error:', error)
+    console.error('Error Response:', error.response?.data)
+    console.error('Error Status:', error.response?.status)
+    
+    if (error.code === 'ERR_CANCELED' || error.code === 'ERR_ABORTED') {
+      console.warn('请求已取消')
+      return Promise.reject(error)
+    }
+    
     const status = error.response?.status
     if (status === 401) {
-      localStorage.removeItem('token')
-      location.href = '/'
+      const resData = error.response?.data
+      if (resData?.code === 401) {
+        return Promise.reject(new Error(resData.message || '登录已过期'))
+      }
     } else if (status === 403) {
       console.error('无权限')
     } else if (status === 500) {

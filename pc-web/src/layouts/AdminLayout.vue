@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAdminStore } from '@/stores/admin'
 import {
@@ -7,13 +7,14 @@ import {
   Briefcase,
   CircleCheck,
   Wallet,
-  Message,
   Setting,
   User,
   Search,
-  ArrowLeft,
-  CaretRight
+  SwitchButton,
+  HomeFilled,
+  ArrowDown
 } from '@element-plus/icons-vue'
+import { searchApi } from '@/api/admin'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +22,9 @@ const store = useAdminStore()
 
 const sidebarCollapsed = ref(false)
 const searchKeyword = ref('')
+const searchResults = ref<any[]>([])
+const showSearchResults = ref(false)
+const showUserDropdown = ref(false)
 
 const adminMenus = computed(() => {
   const menus: any[] = []
@@ -29,61 +33,70 @@ const adminMenus = computed(() => {
   if (roleType === 1 || roleType === 5) {
     menus.push({
       path: '/admin/audit/enterprise',
-      name: '审核管理',
+      name: '企业审核',
       icon: Briefcase,
-      children: [
-        { path: '/admin/audit/enterprise', name: '企业审核' },
-        { path: '/admin/audit/job', name: '岗位审核' },
-      ]
+    })
+    menus.push({
+      path: '/admin/audit/job',
+      name: '岗位审核',
+      icon: Briefcase,
     })
   }
 
   if (roleType === 2 || roleType === 5) {
     menus.push({
       path: '/admin/risk/complaint',
-      name: '风控管理',
+      name: '投诉工单',
       icon: CircleCheck,
-      children: [
-        { path: '/admin/risk/complaint', name: '投诉工单' },
-        { path: '/admin/risk/dashboard', name: '风控看板' },
-      ]
+    })
+    menus.push({
+      path: '/admin/risk/dashboard',
+      name: '风控看板',
+      icon: CircleCheck,
     })
   }
 
   if (roleType === 3 || roleType === 5) {
     menus.push({
       path: '/admin/operation/report',
-      name: '运营管理',
+      name: '数据报表',
       icon: TrendCharts,
-      children: [
-        { path: '/admin/operation/report', name: '数据报表' },
-        { path: '/admin/operation/notification', name: '推送管理' },
-      ]
+    })
+    menus.push({
+      path: '/admin/operation/notification',
+      name: '推送管理',
+      icon: TrendCharts,
     })
   }
 
   if (roleType === 4 || roleType === 5) {
     menus.push({
       path: '/admin/finance/settlement',
-      name: '财务管理',
+      name: '薪资发放',
       icon: Wallet,
-      children: [
-        { path: '/admin/finance/settlement', name: '薪资发放' },
-        { path: '/admin/finance/report', name: '财务报表' },
-      ]
+    })
+    menus.push({
+      path: '/admin/finance/report',
+      name: '财务报表',
+      icon: Wallet,
     })
   }
 
   if (roleType === 5) {
     menus.push({
       path: '/admin/system/config',
-      name: '系统管理',
+      name: '系统配置',
       icon: Setting,
-      children: [
-        { path: '/admin/system/config', name: '系统配置' },
-        { path: '/admin/system/roles', name: '角色权限' },
-        { path: '/admin/system/audit-log', name: '审计日志' },
-      ]
+    })
+    menus.push({
+      path: '/admin/system/roles',
+      name: '角色权限',
+      icon: Setting,
+    })
+    menus.push({
+      path: '/admin/system/audit-log',
+      name: '审计日志',
+      icon: Setting,
     })
   }
 
@@ -100,19 +113,25 @@ const roleNames: Record<number, string> = {
 
 const activePath = computed(() => route.path)
 
-const hasChildren = (item: any) => item.children && item.children.length > 0
-
-const handleMenuClick = (item: any) => {
-  if (hasChildren(item)) {
-    const firstChild = item.children[0]
-    router.push(firstChild.path)
-  } else {
-    router.push(item.path)
+const breadcrumb = computed(() => {
+  const result: string[] = []
+  const match = adminMenus.value.find(item => item.path === activePath.value)
+  if (match) {
+    result.push(match.name)
   }
-}
+  return result
+})
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+const toggleUserDropdown = () => {
+  showUserDropdown.value = !showUserDropdown.value
+}
+
+const closeUserDropdown = () => {
+  showUserDropdown.value = false
 }
 
 const handleLogout = () => {
@@ -120,84 +139,170 @@ const handleLogout = () => {
   router.push('/')
 }
 
-const handleSearch = () => {
+const handleSearch = async () => {
+  const keyword = searchKeyword.value.trim()
+  if (!keyword) {
+    searchResults.value = []
+    showSearchResults.value = false
+    return
+  }
+  
+  try {
+    const response = await searchApi.searchMenus({ keyword })
+    const data = response.data
+    if (data.code === 200) {
+      searchResults.value = data.data || []
+    } else {
+      searchResults.value = adminMenus.value.filter(item => 
+        item.name.toLowerCase().includes(keyword.toLowerCase())
+      )
+    }
+  } catch {
+    searchResults.value = adminMenus.value.filter(item => 
+      item.name.toLowerCase().includes(keyword.toLowerCase())
+    )
+  }
+  showSearchResults.value = searchResults.value.length > 0
+}
+
+const handleSearchInput = () => {
   if (searchKeyword.value.trim()) {
-    console.log('搜索:', searchKeyword.value)
+    handleSearch()
+  } else {
+    searchResults.value = []
+    showSearchResults.value = false
   }
 }
+
+const selectSearchResult = (item: any) => {
+  router.push(item.path)
+  searchKeyword.value = ''
+  searchResults.value = []
+  showSearchResults.value = false
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.search-box') && !target.closest('.user-info')) {
+    closeUserDropdown()
+    showSearchResults.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
   <div class="admin-layout">
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
-      <div class="logo">
-        <span class="logo-text" v-if="!sidebarCollapsed">兼职平台</span>
-        <span class="logo-icon" v-else>管</span>
+      <div class="sidebar-header">
+        <div class="user-avatar-wrapper">
+          <div class="user-avatar">
+            <User />
+          </div>
+        </div>
+        <span class="user-name" v-if="!sidebarCollapsed">{{ store.admin?.real_name || '管理员' }}</span>
       </div>
+
       <nav class="menu">
+        <div class="menu-item" :class="{ active: activePath.startsWith('/admin') && !activePath.includes('audit') && !activePath.includes('risk') && !activePath.includes('operation') && !activePath.includes('finance') && !activePath.includes('system') }" @click="router.push('/admin/audit/enterprise')">
+          <HomeFilled class="menu-icon" />
+          <span class="menu-text" v-if="!sidebarCollapsed">首页</span>
+        </div>
+
         <div 
           v-for="item in adminMenus" 
           :key="item.path"
           class="menu-item"
-          :class="{ 
-            active: activePath.includes(item.path),
-            'has-children': hasChildren(item)
-          }"
-          @click="handleMenuClick(item)"
+          :class="{ active: activePath === item.path }"
+          @click="router.push(item.path)"
         >
           <component :is="item.icon" class="menu-icon" />
           <span class="menu-text" v-if="!sidebarCollapsed">{{ item.name }}</span>
-          <CaretRight 
-            class="menu-arrow" 
-            :class="{ expanded: activePath.includes(item.path) }"
-            v-if="hasChildren(item) && !sidebarCollapsed"
-          />
-          <div class="sub-menu" v-if="hasChildren(item) && activePath.includes(item.path) && !sidebarCollapsed">
-            <div 
-              v-for="child in item.children" 
-              :key="child.path"
-              class="sub-menu-item"
-              :class="{ active: activePath === child.path }"
-              @click.stop="router.push(child.path)"
-            >
-              {{ child.name }}
-            </div>
-          </div>
         </div>
       </nav>
-      <div class="collapse-btn" @click="toggleSidebar">
-        <CaretRight :class="{ rotated: sidebarCollapsed }" />
-      </div>
     </aside>
 
     <main class="main-content">
       <header class="top-bar">
         <div class="left-section">
           <button class="sidebar-toggle" @click="toggleSidebar">
-            <CaretRight :class="{ rotated: !sidebarCollapsed }" />
+            <span class="sidebar-toggle-icon">☰</span>
           </button>
-          <div class="search-box" v-if="!sidebarCollapsed">
-            <Search class="search-icon" />
-            <input 
-              v-model="searchKeyword"
-              type="text" 
-              placeholder="搜索..." 
-              @keyup.enter="handleSearch"
-            />
+          <div class="breadcrumb" v-if="breadcrumb.length">
+            <span class="breadcrumb-item">首页</span>
+            <template v-for="(item, index) in breadcrumb" :key="index">
+              <span class="breadcrumb-separator">/</span>
+              <span class="breadcrumb-item" :class="{ active: index === breadcrumb.length - 1 }">{{ item }}</span>
+            </template>
           </div>
         </div>
         <div class="right-section">
-          <span class="role-label">{{ roleNames[store.adminRoleType] || '管理员' }}</span>
-          <button class="icon-btn" @click="handleLogout">
-            <Message />
-          </button>
-          <button class="icon-btn user-btn" @click="handleLogout">
-            <User />
-          </button>
-          <button class="logout-btn" @click="handleLogout">
-            <ArrowLeft />
-            <span>退出</span>
-          </button>
+          <div class="search-box" @click.stop>
+            <button class="search-icon-btn" @click="handleSearch">
+              <Search class="search-icon" />
+            </button>
+            <input 
+              v-model="searchKeyword"
+              type="text" 
+              placeholder="搜索菜单、功能..." 
+              @keyup.enter="handleSearch"
+              @input="handleSearchInput"
+            />
+            <div class="search-results" v-if="showSearchResults" @click.stop>
+              <div 
+                v-for="item in searchResults" 
+                :key="item.path"
+                class="search-result-item"
+                @click="selectSearchResult(item)"
+              >
+                <component :is="item.icon || Briefcase" class="result-icon" />
+                <span class="result-name">{{ item.name }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="user-info" @click.stop="toggleUserDropdown">
+            <div class="user-avatar-sm">
+              <User />
+            </div>
+            <div class="user-detail">
+              <span class="user-name">{{ store.admin?.real_name || '管理员' }}</span>
+              <span class="user-role">{{ roleNames[store.adminRoleType] || '管理员' }}</span>
+            </div>
+            <ArrowDown class="user-arrow" :class="{ open: showUserDropdown }" />
+          </div>
+          <div class="user-dropdown" v-if="showUserDropdown" @click.stop>
+            <div class="dropdown-header">
+              <div class="dropdown-avatar">
+                <User />
+              </div>
+              <div class="dropdown-user-info">
+                <span class="dropdown-username">{{ store.admin?.real_name || '管理员' }}</span>
+                <span class="dropdown-role">{{ roleNames[store.adminRoleType] || '管理员' }}</span>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" @click="router.push('/admin/profile'); closeUserDropdown()">
+              <User class="dropdown-icon" />
+              <span>个人中心</span>
+            </div>
+            <div class="dropdown-item" @click="router.push('/admin/settings'); closeUserDropdown()">
+              <Setting class="dropdown-icon" />
+              <span>账号设置</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item logout" @click="handleLogout">
+              <SwitchButton class="dropdown-icon" />
+              <span>退出登录</span>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -206,7 +311,7 @@ const handleSearch = () => {
       </div>
 
       <footer class="footer">
-        <span>© 2026 长沙大学生兼职平台 - 管理后台</span>
+        <span>© 2026 长沙大学生兼职平台 - 管理后台 v1.0.0</span>
       </footer>
     </main>
   </div>
@@ -220,68 +325,107 @@ const handleSearch = () => {
 }
 
 .sidebar {
-  width: 240px;
-  background-color: #0F172A;
-  color: #F8FAFC;
+  width: 200px;
+  background: #F6F8FA;
+  border-right: 1px solid #E5E6EB;
+  color: #24292F;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s;
+  transition: width 0.2s ease-out;
   position: relative;
+  flex-shrink: 0;
 
   &.collapsed {
-    width: 64px;
+    width: 56px;
   }
 }
 
-.logo {
-  height: 64px;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #E5E6EB;
+  gap: 12px;
+  position: relative;
+}
+
+.user-avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #1E293B;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.logo-text {
-  color: #165DFF;
-}
-
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #165DFF 0%, #0F172A 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
   color: #FFFFFF;
+  font-size: 14px;
+  flex-shrink: 0;
+  border: 1px solid #E5E6EB;
+}
+
+.user-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #24292F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu {
   flex: 1;
-  padding: 16px 0;
+  padding: 8px;
   overflow-y: auto;
+  overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #C9CDD4;
+    border-radius: 3px;
+  }
+}
+
+.menu-group {
+  margin-bottom: 4px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 12px 20px;
+  padding: 6px 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.15s ease;
   position: relative;
+  border-radius: 6px;
+  gap: 10px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: #E5E6EB;
   }
 
   &.active {
-    background-color: rgba(22, 93, 255, 0.2);
-    
+    background-color: #EBF5FF;
+    border-left: 2px solid #165DFF;
+
     .menu-icon {
       color: #165DFF;
+    }
+
+    .menu-text {
+      color: #165DFF;
+      font-weight: 500;
     }
   }
 
@@ -291,74 +435,72 @@ const handleSearch = () => {
 }
 
 .menu-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 12px;
-  color: #94A3B8;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #86909C;
+  transition: color 0.15s;
 }
 
 .menu-text {
-  font-size: 14px;
+  flex: 1;
+  font-size: 13px;
+  color: #4E5969;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.15s;
 }
 
 .menu-arrow {
   font-size: 12px;
-  color: #94A3B8;
-  transition: transform 0.3s;
+  color: #86909C;
+  transition: transform 0.2s;
+  flex-shrink: 0;
 
   &.expanded {
     transform: rotate(90deg);
+    color: #4E5969;
   }
 }
 
 .sub-menu {
-  background-color: rgba(0, 0, 0, 0.2);
-  margin: 8px 16px;
-  border-radius: 4px;
-  overflow: hidden;
+  margin: 2px 0 4px 8px;
+  padding-left: 8px;
 }
 
 .sub-menu-item {
-  padding: 10px 20px;
-  font-size: 13px;
-  color: #CBD5E1;
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: #86909C;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  gap: 6px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: #F2F3F5;
+    color: #4E5969;
   }
 
   &.active {
-    background-color: rgba(22, 93, 255, 0.3);
-    color: #FFFFFF;
+    background-color: #EBF5FF;
+    color: #165DFF;
+
+    .sub-dot {
+      background-color: #165DFF;
+    }
   }
 }
 
-.collapse-btn {
-  position: absolute;
-  right: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  background-color: #FFFFFF;
+.sub-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-
-  .el-icon {
-    font-size: 14px;
-    color: #4E5969;
-    transition: transform 0.3s;
-
-    &.rotated {
-      transform: rotate(180deg);
-    }
-  }
+  background-color: #C9CDD4;
+  flex-shrink: 0;
+  transition: background-color 0.15s;
 }
 
 .main-content {
@@ -366,147 +508,584 @@ const handleSearch = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .top-bar {
-  height: 64px;
+  height: 56px;
   background-color: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid #E5E6EB;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  flex-shrink: 0;
+  z-index: 10;
+  position: relative;
 }
 
 .left-section {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 .sidebar-toggle {
   background: none;
   border: none;
   font-size: 18px;
-  color: #475569;
+  color: #4E5969;
   cursor: pointer;
-  margin-right: 16px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  .el-icon {
-    transition: transform 0.3s;
-
-    &.rotated {
-      transform: rotate(180deg);
-    }
+  &:hover {
+    background-color: #F2F3F5;
   }
 }
 
-.search-box {
-  position: relative;
-  width: 300px;
+.sidebar-toggle-icon {
+  font-size: 16px;
+}
 
-  .search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #94A3B8;
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.breadcrumb-item {
+  color: #86909C;
+
+  &.active {
+    color: #24292F;
+    font-weight: 500;
   }
+}
 
-  input {
-    width: 100%;
-    height: 32px;
-    padding: 0 12px 0 36px;
-    border: 1px solid #E2E8F0;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #F8FAFC;
-    outline: none;
-
-    &:focus {
-      border-color: #165DFF;
-      background-color: #FFFFFF;
-    }
-  }
+.breadcrumb-separator {
+  margin: 0 6px;
+  color: #C9CDD4;
+  font-size: 12px;
 }
 
 .right-section {
   display: flex;
   align-items: center;
+  gap: 12px;
+  position: relative;
 }
 
-.role-label {
-  font-size: 13px;
-  color: #64748B;
-  padding: 4px 12px;
-  background-color: #E0F2FE;
-  color: #0369A1;
-  border-radius: 4px;
-  margin-right: 16px;
-}
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 280px;
+  height: 36px;
+  border: 1px solid #E5E6EB;
+  border-radius: 6px;
+  background-color: #F7F8FA;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
-.icon-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #475569;
-  cursor: pointer;
-  margin-left: 16px;
-  padding: 8px;
+  &:focus-within {
+    border-color: #165DFF;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.1);
+  }
 
-  &:hover {
-    color: #165DFF;
+  .search-icon-btn {
+    width: 36px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #86909C;
+    transition: all 0.15s;
+
+    &:hover {
+      color: #4E5969;
+    }
+  }
+
+  .search-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  input {
+    flex: 1;
+    height: 100%;
+    padding: 0 12px;
+    border: none;
+    font-size: 13px;
+    background: transparent;
+    outline: none;
+
+    &::placeholder {
+      color: #C9CDD4;
+    }
   }
 }
 
-.user-btn {
+.search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E6EB;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 16px;
+    width: 12px;
+    height: 12px;
+    background-color: #FFFFFF;
+    border-top: 1px solid #E5E6EB;
+    border-left: 1px solid #E5E6EB;
+    transform: rotate(45deg);
+  }
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.12s;
+  gap: 10px;
+
+  &:hover {
+    background-color: #F7F8FA;
+
+    .result-name {
+      color: #165DFF;
+    }
+  }
+
+  &:active {
+    background-color: #EBF5FF;
+  }
+}
+
+.result-icon {
+  width: 16px;
+  height: 16px;
+  color: #86909C;
+  flex-shrink: 0;
+}
+
+.result-name {
+  font-size: 13px;
+  color: #4E5969;
+  transition: color 0.12s;
+}
+
+.notification-btn {
+  position: relative;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background-color: #F1F5F9;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #86909C;
+  transition: all 0.15s;
+
+  &:hover {
+    background-color: #F7F8FA;
+    color: #4E5969;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.notification-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background-color: #F53F3F;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.logout-btn {
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 52px;
+  width: 320px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background-color: #FFFFFF;
+    border-top: 1px solid #E5E6EB;
+    border-right: 1px solid #E5E6EB;
+    transform: rotate(-45deg);
+  }
+}
+
+.dropdown-title {
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #24292F;
+  border-bottom: 1px solid #E5E6EB;
+}
+
+.notification-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
   display: flex;
-  align-items: center;
-  background: none;
-  border: 1px solid #E2E8F0;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  color: #64748B;
+  align-items: flex-start;
+  padding: 12px 16px;
   cursor: pointer;
-  margin-left: 16px;
-  transition: all 0.2s;
+  transition: all 0.12s;
+  gap: 12px;
 
   &:hover {
-    background-color: #F8FAFC;
-    color: #EF4444;
-    border-color: #FECACA;
+    background-color: #F7F8FA;
   }
 
-  .el-icon {
-    margin-right: 4px;
+  &:active {
+    background-color: #EBF5FF;
   }
+}
+
+.notification-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .el-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.success {
+    background-color: #E8FFEA;
+    .el-icon { color: #00B42A; }
+  }
+
+  &.warning {
+    background-color: #FFF7E6;
+    .el-icon { color: #FF7D00; }
+  }
+
+  &.danger {
+    background-color: #FFF1F0;
+    .el-icon { color: #F53F3F; }
+  }
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 13px;
+  color: #24292F;
+  font-weight: 500;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #C9CDD4;
+}
+
+.dropdown-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #E5E6EB;
+  text-align: center;
+}
+
+.view-all {
+  font-size: 12px;
+  color: #165DFF;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #0E42D2;
+  }
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background-color: #F7F8FA;
+  }
+
+  &:active {
+    background-color: #E5E6EB;
+  }
+}
+
+.user-avatar-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #24292F;
+}
+
+.user-role {
+  font-size: 11px;
+  color: #86909C;
+}
+
+.user-arrow {
+  width: 14px;
+  height: 14px;
+  color: #86909C;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 28px;
+    width: 12px;
+    height: 12px;
+    background-color: #FFFFFF;
+    border-top: 1px solid #E5E6EB;
+    border-right: 1px solid #E5E6EB;
+    transform: rotate(-45deg);
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background-color: #F7F8FA;
+}
+
+.dropdown-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.dropdown-user-info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  min-width: 0;
+}
+
+.dropdown-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #24292F;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-role {
+  font-size: 12px;
+  color: #86909C;
+  margin-top: 2px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #4E5969;
+  cursor: pointer;
+  transition: all 0.12s;
+  gap: 10px;
+
+  &:hover {
+    background-color: #F7F8FA;
+    color: #165DFF;
+
+    .dropdown-icon {
+      color: #165DFF;
+    }
+  }
+
+  &:active {
+    background-color: #EBF5FF;
+  }
+
+  &.logout:hover {
+    background-color: #FFF1F0;
+    color: #F53F3F;
+
+    .dropdown-icon {
+      color: #F53F3F;
+    }
+  }
+}
+
+.dropdown-icon {
+  width: 16px;
+  height: 16px;
+  color: #86909C;
+  transition: color 0.12s;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #E5E6EB;
+  margin: 4px 0;
 }
 
 .content-wrapper {
   flex: 1;
   overflow-y: auto;
-  background-color: #F1F5F9;
+  background-color: #FFFFFF;
   padding: 24px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #F2F3F5;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #C9CDD4;
+    border-radius: 4px;
+
+    &:hover {
+      background: #86909C;
+    }
+  }
 }
 
 .footer {
   height: 40px;
   background-color: #FFFFFF;
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid #E5E6EB;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #94A3B8;
+  color: #86909C;
+  flex-shrink: 0;
 }
 </style>

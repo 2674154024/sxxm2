@@ -10,13 +10,13 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const tabs = [
-  { key: 0, label: '全部' },
-  { key: 1, label: '待处理' },
-  { key: 2, label: '已通过' },
-  { key: 3, label: '已拒绝' },
+  { key: -1, label: '全部', status: undefined },
+  { key: 0, label: '待处理', status: 0 },
+  { key: 1, label: '已通过', status: 1 },
+  { key: 2, label: '已拒绝', status: 2 },
 ]
 
-const activeTab = ref(0)
+const activeTab = ref(-1)
 const applyList = ref<ApplyItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
@@ -24,14 +24,14 @@ const page = ref(1)
 const pageSize = 10
 
 const statusMap: Record<number, { text: string; color: string; bgColor: string }> = {
-  1: { text: '待处理', color: 'var(--color-accent)', bgColor: 'var(--color-accent-bg)' },
-  2: { text: '已通过', color: 'var(--color-success)', bgColor: 'var(--color-success-bg)' },
-  3: { text: '已拒绝', color: 'var(--color-text-secondary)', bgColor: 'var(--color-bg-secondary)' },
-  4: { text: '已取消', color: 'var(--color-text-secondary)', bgColor: 'var(--color-bg-secondary)' },
+  0: { text: '待审核', color: 'var(--color-accent)', bgColor: 'var(--color-accent-bg)' },
+  1: { text: '已通过', color: 'var(--color-success)', bgColor: 'var(--color-success-bg)' },
+  2: { text: '已拒绝', color: 'var(--color-danger)', bgColor: 'var(--color-danger-bg)' },
+  3: { text: '已取消', color: 'var(--color-text-secondary)', bgColor: 'var(--color-bg-secondary)' },
 }
 
 function getStatusStyle(status: number) {
-  return statusMap[status] || statusMap[1]
+  return statusMap[status] || statusMap[0]
 }
 
 async function loadList(refresh = false) {
@@ -49,8 +49,9 @@ async function loadList(refresh = false) {
       page: page.value,
       size: pageSize,
     }
-    if (activeTab.value > 0) {
-      params.status = activeTab.value
+    const currentTab = tabs.find(t => t.key === activeTab.value)
+    if (currentTab && currentTab.status !== undefined) {
+      params.status = currentTab.status
     }
 
     const res = await getApplyList(params)
@@ -168,7 +169,7 @@ onMounted(() => {
           <div class="card-footer">
             <span class="apply-time">投递时间：{{ item.create_time }}</span>
             <button
-              v-if="item.apply_status === 1"
+              v-if="item.apply_status === 0"
               class="cancel-btn"
               @click="handleCancel(item.apply_id, $event)"
             >

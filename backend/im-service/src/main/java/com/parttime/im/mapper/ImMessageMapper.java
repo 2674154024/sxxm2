@@ -21,11 +21,20 @@ public interface ImMessageMapper extends BaseMapper<ImMessageEntity> {
     @Select("SELECT * FROM t_im_message WHERE to_id = #{userId} AND is_read = 0 ORDER BY timestamp ASC")
     List<ImMessageEntity> selectUnreadMessages(@Param("userId") String userId);
 
-    @Select("SELECT t.to_id as target_id, MAX(t.timestamp) as last_timestamp, " +
-            "(SELECT content FROM t_im_message WHERE (from_id = t.to_id AND to_id = #{userId}) OR (from_id = #{userId} AND to_id = t.to_id) ORDER BY timestamp DESC LIMIT 1) as last_content, " +
-            "(SELECT COUNT(*) FROM t_im_message WHERE to_id = #{userId} AND from_id = t.to_id AND is_read = 0) as unread_count " +
-            "FROM t_im_message t WHERE t.from_id = #{userId} OR t.to_id = #{userId} " +
-            "GROUP BY t.to_id " +
+    @Select("SELECT " +
+            "  other_user AS target_id, " +
+            "  MAX(timestamp) AS last_timestamp, " +
+            "  (SELECT content FROM t_im_message WHERE " +
+            "    (from_id = other_user AND to_id = #{userId}) OR (from_id = #{userId} AND to_id = other_user) " +
+            "    ORDER BY timestamp DESC LIMIT 1) AS last_content, " +
+            "  (SELECT COUNT(*) FROM t_im_message WHERE " +
+            "    to_id = #{userId} AND from_id = other_user AND is_read = 0) AS unread_count " +
+            "FROM ( " +
+            "  SELECT to_id AS other_user, timestamp FROM t_im_message WHERE from_id = #{userId} " +
+            "  UNION ALL " +
+            "  SELECT from_id AS other_user, timestamp FROM t_im_message WHERE to_id = #{userId} " +
+            ") AS combined " +
+            "GROUP BY other_user " +
             "ORDER BY last_timestamp DESC")
     List<ConversationListVO> selectConversationList(@Param("userId") String userId);
 

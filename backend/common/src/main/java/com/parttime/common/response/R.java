@@ -1,5 +1,6 @@
 package com.parttime.common.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -52,6 +53,11 @@ public class R<T> {
     private String traceId;
 
     /**
+     * 是否成功
+     */
+    private Boolean success;
+
+    /**
      * 成功响应（带数据）
      *
      * @param data 响应数据
@@ -59,7 +65,13 @@ public class R<T> {
      * @return 成功响应
      */
     public static <T> R<T> ok(T data) {
-        return new R<>(200, "成功", data, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(200);
+        r.setMessage("成功");
+        r.setData(data);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(true);
+        return r;
     }
 
     /**
@@ -69,7 +81,13 @@ public class R<T> {
      * @return 成功响应
      */
     public static <T> R<T> ok() {
-        return new R<>(200, "成功", null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(200);
+        r.setMessage("成功");
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(true);
+        return r;
     }
 
     /**
@@ -81,7 +99,13 @@ public class R<T> {
      * @return 成功响应
      */
     public static <T> R<T> ok(String message, T data) {
-        return new R<>(200, message, data, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(200);
+        r.setMessage(message);
+        r.setData(data);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(true);
+        return r;
     }
 
     /**
@@ -93,7 +117,13 @@ public class R<T> {
      * @return 失败响应
      */
     public static <T> R<T> fail(Integer code, String message) {
-        return new R<>(code, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(code);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -104,7 +134,13 @@ public class R<T> {
      * @return 400响应
      */
     public static <T> R<T> badRequest(String message) {
-        return new R<>(400, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(400);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -115,7 +151,13 @@ public class R<T> {
      * @return 401响应
      */
     public static <T> R<T> unauthorized(String message) {
-        return new R<>(401, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(401);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -126,7 +168,13 @@ public class R<T> {
      * @return 403响应
      */
     public static <T> R<T> forbidden(String message) {
-        return new R<>(403, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(403);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -137,7 +185,13 @@ public class R<T> {
      * @return 409响应
      */
     public static <T> R<T> conflict(String message) {
-        return new R<>(409, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(409);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -148,7 +202,13 @@ public class R<T> {
      * @return 422响应
      */
     public static <T> R<T> unprocessable(String message) {
-        return new R<>(422, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(422);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -159,7 +219,13 @@ public class R<T> {
      * @return 500响应
      */
     public static <T> R<T> serverError(String message) {
-        return new R<>(500, message, null, UUID.randomUUID().toString());
+        R<T> r = new R<>();
+        r.setCode(500);
+        r.setMessage(message);
+        r.setData(null);
+        r.setTraceId(UUID.randomUUID().toString());
+        r.setSuccess(false);
+        return r;
     }
 
     /**
@@ -167,7 +233,7 @@ public class R<T> {
      *
      * @return true表示成功（code=200）
      */
-    public boolean isSuccess() {
+    public boolean checkSuccess() {
         return this.code != null && this.code == 200;
     }
 }

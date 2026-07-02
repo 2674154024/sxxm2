@@ -11,8 +11,10 @@ import com.parttime.complaint.entity.FeedbackEntity;
 import com.parttime.complaint.entity.PracticeReportEntity;
 import com.parttime.complaint.mapper.ComplaintMapper;
 import com.parttime.complaint.mapper.FeedbackMapper;
+import com.parttime.complaint.mapper.JobMapper;
 import com.parttime.complaint.mapper.PracticeReportMapper;
 import com.parttime.complaint.service.ComplaintService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ComplaintServiceImpl implements ComplaintService {
 
@@ -39,6 +42,9 @@ public class ComplaintServiceImpl implements ComplaintService {
     private PracticeReportMapper practiceReportMapper;
 
     @Autowired
+    private JobMapper jobMapper;
+
+    @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Override
@@ -47,11 +53,26 @@ public class ComplaintServiceImpl implements ComplaintService {
                                               String jobId, String complaintType, String complaintContent, String evidenceUrls) {
         String complaintId = UUID.randomUUID().toString();
 
+        String finalDefendantId = defendantId;
+        String finalDefendantType = defendantType;
+
+        if ((finalDefendantId == null || finalDefendantId.isEmpty()) && jobId != null && !jobId.isEmpty()) {
+            finalDefendantId = jobMapper.getEnterpriseIdByJobId(jobId);
+            finalDefendantType = "enterprise";
+        }
+
+        if (finalDefendantId == null || finalDefendantId.isEmpty()) {
+            throw new BusinessException("被投诉人ID不能为空");
+        }
+        if (finalDefendantType == null || finalDefendantType.isEmpty()) {
+            finalDefendantType = "enterprise";
+        }
+
         ComplaintEntity complaint = ComplaintEntity.builder()
                 .complaintId(complaintId)
                 .studentId(studentId)
-                .defendantId(defendantId)
-                .defendantType(defendantType)
+                .defendantId(finalDefendantId)
+                .defendantType(finalDefendantType)
                 .jobId(jobId)
                 .complaintType(complaintType)
                 .complaintContent(complaintContent)
@@ -63,14 +84,18 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         complaintMapper.insert(complaint);
 
-        JSONObject notification = new JSONObject();
-        notification.put("type", "complaint");
-        notification.put("complaintId", complaintId);
-        notification.put("studentId", studentId);
-        notification.put("complaintType", complaintType);
-        notification.put("createdAt", System.currentTimeMillis());
+        try {
+            JSONObject notification = new JSONObject();
+            notification.put("type", "complaint");
+            notification.put("complaintId", complaintId);
+            notification.put("studentId", studentId);
+            notification.put("complaintType", complaintType);
+            notification.put("createdAt", System.currentTimeMillis());
 
-        rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY_COMPLAINT, notification.toJSONString());
+            rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY_COMPLAINT, notification.toJSONString());
+        } catch (Exception e) {
+            log.warn("发送投诉通知失败: {}", e.getMessage());
+        }
 
         return convertToComplaintResponse(complaint);
     }

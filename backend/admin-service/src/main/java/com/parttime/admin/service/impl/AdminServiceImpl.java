@@ -2,6 +2,7 @@ package com.parttime.admin.service.impl;
 
 import com.parttime.admin.dto.request.AdminLoginRequest;
 import com.parttime.admin.dto.response.AdminLoginResponse;
+import com.parttime.admin.dto.response.AdminProfileResponse;
 import com.parttime.admin.entity.AdminEntity;
 import com.parttime.admin.entity.RoleEntity;
 import com.parttime.admin.mapper.AdminMapper;
@@ -76,6 +77,29 @@ public class AdminServiceImpl implements AdminService {
             .realName(admin.getRealName())
             .role(admin.getRole())
             .roleName(roleName)
+            .build();
+    }
+
+    @Override
+    public AdminProfileResponse getProfile(String adminId) {
+        AdminEntity admin = adminMapper.selectById(adminId);
+        if (admin == null) {
+            throw new BusinessException(404, "管理员不存在");
+        }
+
+        RoleEntity role = roleMapper.selectById(admin.getRole());
+        String roleName = role != null ? role.getRoleName() : "";
+
+        return AdminProfileResponse.builder()
+            .id(admin.getId())
+            .username(admin.getUsername())
+            .realName(admin.getRealName())
+            .role(admin.getRole())
+            .roleName(roleName)
+            .status(admin.getStatus())
+            .lastLoginTime(admin.getLastLoginTime())
+            .lastLoginIp(admin.getLastLoginIp())
+            .createdAt(admin.getCreatedAt())
             .build();
     }
 }

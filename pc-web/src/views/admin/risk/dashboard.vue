@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { riskApi, type RiskStats } from '@/api/admin'
-import { ElCard, ElRow, ElCol, ElTable, ElTableColumn, ElTag, ElProgress } from 'element-plus'
+import { ElRow, ElCol, ElTable, ElTableColumn, ElTag, ElProgress } from 'element-plus'
 import { Bell, Clock, CreditCard, CircleCheck, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const stats = ref<RiskStats>({
-  today_complaint_count: 25,
-  pending_count: 18,
-  frozen_amount: 125800,
-  compensated_amount: 35600
+  totalComplaints: 25,
+  pendingComplaints: 18,
+  handledComplaints: 7,
+  totalCompensationAmount: 35600
 })
 
 const complaintTrend = ref([12, 18, 8, 25, 15, 22, 25])
@@ -37,12 +37,6 @@ const pendingComplaints = ref([
   { id: 'CL20260629005', type: '虚假招聘', enterprise: '某文化传媒有限公司', time: '07:50', priority: 'low' },
 ])
 
-const priorityMap: Record<string, { label: string; color: 'danger' | 'warning' | 'info' }> = {
-  high: { label: '高', color: 'danger' },
-  medium: { label: '中', color: 'warning' },
-  low: { label: '低', color: 'info' }
-}
-
 const riskStatusMap: Record<string, { color: 'danger' | 'warning' | 'success' }> = {
   '高风险': { color: 'danger' },
   '中风险': { color: 'warning' },
@@ -60,10 +54,14 @@ const loadData = async () => {
   }
 }
 
+const formatAmount = (value?: number | null) => {
+  return `¥${(value ?? 0).toLocaleString()}`
+}
+
 const statCards = computed(() => [
   { 
-    title: '今日投诉数', 
-    value: stats.value.today_complaint_count, 
+    title: '总投诉数', 
+    value: stats.value.totalComplaints ?? 0, 
     icon: Bell, 
     color: 'danger',
     trend: '+12%',
@@ -71,15 +69,15 @@ const statCards = computed(() => [
   },
   { 
     title: '待处理工单', 
-    value: stats.value.pending_count, 
+    value: stats.value.pendingComplaints ?? 0, 
     icon: Clock, 
     color: 'warning',
     trend: '+8%',
     trendUp: true
   },
   { 
-    title: '冻结金额', 
-    value: `¥${stats.value.frozen_amount.toLocaleString()}`, 
+    title: '已处理工单', 
+    value: stats.value.handledComplaints ?? 0, 
     icon: CreditCard, 
     color: 'primary',
     trend: '+5%',
@@ -87,7 +85,7 @@ const statCards = computed(() => [
   },
   { 
     title: '已赔付金额', 
-    value: `¥${stats.value.compensated_amount.toLocaleString()}`, 
+    value: formatAmount(stats.value.totalCompensationAmount), 
     icon: CircleCheck, 
     color: 'success',
     trend: '-3%',
@@ -132,102 +130,154 @@ onMounted(() => {
 
 <template>
   <div class="risk-dashboard">
-    <ElRow :gutter="20">
-      <ElCol 
+    <div class="page-header">
+      <div class="header-left">
+        <h2 class="page-title">风控看板</h2>
+        <p class="page-desc">实时监控平台风险数据，保障平台安全运营</p>
+      </div>
+    </div>
+
+    <el-row :gutter="16" class="stats-row">
+      <el-col 
         v-for="(card, index) in statCards" 
         :key="index" 
         :span="6"
       >
-        <ElCard class="stat-card" :class="`stat-card-${card.color}`">
+        <div class="stat-card" :class="`stat-card-${card.color}`">
           <div class="stat-header">
-            <component :is="card.icon" class="stat-icon" />
+            <div class="stat-icon-box">
+              <component :is="card.icon" class="stat-icon" />
+            </div>
             <span class="stat-title">{{ card.title }}</span>
           </div>
           <div class="stat-value">{{ card.value }}</div>
-          <div class="stat-trend" :class="{ 'trend-up': card.trendUp }">
+          <div class="stat-trend" :class="{ 'trend-up': card.trendUp, 'trend-down': !card.trendUp }">
             <component :is="card.trendUp ? ArrowUp : ArrowDown" class="trend-icon" />
             <span>{{ card.trend }}</span>
+            <span class="trend-label">较昨日</span>
           </div>
-        </ElCard>
-      </ElCol>
-    </ElRow>
+        </div>
+      </el-col>
+    </el-row>
 
-    <ElRow :gutter="20" style="margin-top: 20px;">
-      <ElCol :span="14">
-        <ElCard title="投诉趋势（近7天）">
+    <el-row :gutter="16" class="chart-row">
+      <el-col :span="16">
+        <div class="chart-card">
+          <div class="card-header">
+            <span class="card-title">投诉趋势（近7天）</span>
+          </div>
           <div id="trendChart" class="chart-container"></div>
-        </ElCard>
-      </ElCol>
-      <ElCol :span="10">
-        <ElCard title="投诉类型分布">
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="chart-card">
+          <div class="card-header">
+            <span class="card-title">投诉类型分布</span>
+          </div>
           <div id="typeChart" class="chart-container-small"></div>
-        </ElCard>
-      </ElCol>
-    </ElRow>
+        </div>
+      </el-col>
+    </el-row>
 
-    <ElRow :gutter="20" style="margin-top: 20px;">
-      <ElCol :span="14">
-        <ElCard title="高风险企业预警">
-          <ElTable :data="highRiskEnterprises" stripe>
-            <ElTableColumn prop="name" label="企业名称" min-width="180" />
-            <ElTableColumn prop="complaint_count" label="投诉次数" width="100" />
-            <ElTableColumn prop="credit_score" label="信用分" width="120">
+    <el-row :gutter="16" class="bottom-row">
+      <el-col :span="16">
+        <div class="chart-card">
+          <div class="card-header">
+            <span class="card-title">高风险企业预警</span>
+          </div>
+          <el-table 
+            :data="highRiskEnterprises" 
+            class="risk-table"
+            stripe
+            :header-cell-style="{ background: '#F7F8FA', color: '#4E5969', fontWeight: 500 }"
+          >
+            <el-table-column prop="name" label="企业名称" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="complaint_count" label="投诉次数" width="100" align="center" />
+            <el-table-column prop="credit_score" label="信用分" width="140">
               <template #default="scope">
-                <ElProgress 
+                <el-progress 
                   :percentage="scope.row.credit_score" 
                   :color="scope.row.credit_score < 60 ? '#F53F3F' : scope.row.credit_score < 80 ? '#FF7D00' : '#00B42A'"
                   :stroke-width="8"
-                  show-text
+                  :text-inside="false"
+                  :show-text="true"
                 />
               </template>
-            </ElTableColumn>
-            <ElTableColumn prop="status" label="风险等级" width="100">
+            </el-table-column>
+            <el-table-column prop="status" label="风险等级" width="100" align="center">
               <template #default="scope">
-                <ElTag :type="riskStatusMap[scope.row.status]?.color">
+                <el-tag :type="riskStatusMap[scope.row.status]?.color" effect="light" round size="small">
                   {{ scope.row.status }}
-                </ElTag>
+                </el-tag>
               </template>
-            </ElTableColumn>
-          </ElTable>
-        </ElCard>
-      </ElCol>
-      <ElCol :span="10">
-        <ElCard title="待处理工单">
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="chart-card">
+          <div class="card-header">
+            <span class="card-title">待处理工单</span>
+            <el-tag type="danger" effect="light" size="small">{{ pendingComplaints.length }} 条</el-tag>
+          </div>
           <div class="pending-list">
             <div 
               v-for="item in pendingComplaints" 
               :key="item.id" 
               class="pending-item"
             >
-              <div class="pending-info">
-                <span class="pending-id">{{ item.id }}</span>
-                <span class="pending-type">{{ item.type }}</span>
-                <span class="pending-enterprise">{{ item.enterprise }}</span>
+              <div class="pending-left">
+                <div class="priority-dot" :class="`priority-${item.priority}`"></div>
+                <div class="pending-info">
+                  <span class="pending-id">{{ item.id }}</span>
+                  <span class="pending-type">{{ item.type }}</span>
+                </div>
               </div>
-              <div class="pending-meta">
+              <div class="pending-right">
                 <span class="pending-time">{{ item.time }}</span>
-                <ElTag :type="priorityMap[item.priority]?.color" size="small">
-                  {{ priorityMap[item.priority]?.label }}
-                </ElTag>
               </div>
             </div>
           </div>
-        </ElCard>
-      </ElCol>
-    </ElRow>
+        </div>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <style scoped lang="scss">
 .risk-dashboard {
-  padding: 0;
+  min-height: 100%;
+}
+
+.page-header {
+  margin-bottom: 16px;
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1D2129;
+    margin: 0 0 4px 0;
+  }
+
+  .page-desc {
+    font-size: 13px;
+    color: #86909C;
+    margin: 0;
+  }
+}
+
+.stats-row {
+  margin-bottom: 16px;
 }
 
 .stat-card {
+  background: #FFFFFF;
   border-radius: 8px;
   padding: 20px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
 
   &::before {
     content: '';
@@ -235,7 +285,12 @@ onMounted(() => {
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 3px;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
   }
 
   &.stat-card-danger::before { background-color: #F53F3F; }
@@ -247,41 +302,108 @@ onMounted(() => {
 .stat-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.stat-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .stat-card-danger & {
+    background: #FFECE8;
+    color: #F53F3F;
+  }
+  .stat-card-warning & {
+    background: #FFF7E8;
+    color: #FF7D00;
+  }
+  .stat-card-primary & {
+    background: #E8F3FF;
+    color: #165DFF;
+  }
+  .stat-card-success & {
+    background: #E8FFEA;
+    color: #00B42A;
+  }
 }
 
 .stat-icon {
-  font-size: 20px;
-  margin-right: 8px;
-  color: #64748B;
+  font-size: 22px;
 }
 
 .stat-title {
-  font-size: 14px;
-  color: #64748B;
+  font-size: 13px;
+  color: #86909C;
 }
 
 .stat-value {
   font-size: 28px;
-  font-weight: bold;
-  color: #1E293B;
+  font-weight: 600;
+  color: #1D2129;
   margin-bottom: 8px;
+  line-height: 1.2;
 }
 
 .stat-trend {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: #64748B;
+  color: #86909C;
+  gap: 4px;
 
   &.trend-up {
     color: #F53F3F;
+  }
+
+  &.trend-down {
+    color: #00B42A;
   }
 }
 
 .trend-icon {
   font-size: 12px;
-  margin-right: 4px;
+}
+
+.trend-label {
+  color: #C9CDD4;
+  margin-left: 4px;
+}
+
+.chart-row {
+  margin-bottom: 16px;
+}
+
+.bottom-row {
+  margin-bottom: 0;
+}
+
+.chart-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  height: 100%;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F2F3F5;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1D2129;
 }
 
 .chart-container {
@@ -292,51 +414,97 @@ onMounted(() => {
   height: 280px;
 }
 
+.risk-table {
+  :deep(.el-table__row) {
+    &:hover > td {
+      background-color: #F7F8FA !important;
+    }
+  }
+
+  :deep(.el-table__cell) {
+    padding: 10px 0;
+  }
+}
+
 .pending-list {
   max-height: 320px;
   overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #C9CDD4;
+    border-radius: 2px;
+  }
 }
 
 .pending-item {
   padding: 12px 0;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid #F2F3F5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   &:last-child {
     border-bottom: none;
   }
+
+  &:hover {
+    background-color: #F7F8FA;
+    margin: 0 -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 6px;
+  }
+}
+
+.pending-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+
+  &.priority-high { background: #F53F3F; box-shadow: 0 0 6px rgba(245, 63, 63, 0.4); }
+  &.priority-medium { background: #FF7D00; box-shadow: 0 0 6px rgba(255, 125, 0, 0.4); }
+  &.priority-low { background: #165DFF; box-shadow: 0 0 6px rgba(22, 93, 255, 0.4); }
 }
 
 .pending-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 8px;
 }
 
 .pending-id {
   font-size: 13px;
-  font-weight: bold;
-  color: #475569;
+  font-weight: 500;
+  color: #4E5969;
 }
 
 .pending-type {
   font-size: 12px;
-  color: #F53F3F;
+  color: #86909C;
 }
 
-.pending-enterprise {
-  font-size: 12px;
-  color: #94A3B8;
-}
-
-.pending-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.pending-right {
+  flex-shrink: 0;
 }
 
 .pending-time {
   font-size: 12px;
-  color: #94A3B8;
+  color: #C9CDD4;
 }
 </style>

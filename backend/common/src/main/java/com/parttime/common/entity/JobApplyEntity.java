@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 @TableName("t_job_apply")
 public class JobApplyEntity {
 
-    @TableId(value = "apply_id", type = IdType.INPUT)
-    private String applyId;
+    @TableId(value = "id", type = IdType.INPUT)
+    private String id;
 
     @TableField("student_id")
     private String studentId;

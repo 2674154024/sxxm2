@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
-import { getComplaintTypes, createComplaint, type ComplaintTypeItem } from '@/api/complaint'
+import { getComplaintTypes, createComplaint, uploadEvidence, type ComplaintTypeItem } from '@/api/complaint'
 import { getApplyList, type ApplyItem } from '@/api/apply'
 import { useUserStore } from '@/stores/user'
 import { showToast } from 'vant'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const typeList = ref<ComplaintTypeItem[]>([])
@@ -23,7 +24,7 @@ const showJobPicker = ref(false)
 
 const contentLength = computed(() => content.value.length)
 const canSubmit = computed(() => {
-  return selectedType.value && content.value.length >= 20 && content.value.length <= 500 && !submitting.value
+  return selectedType.value && content.value.length >= 20 && content.value.length <= 500 && !submitting.value && !uploadingImages.value
 })
 
 async function loadTypes() {
@@ -44,8 +45,12 @@ async function loadApplyList() {
     if (res.code === 200) {
       applyList.value = res.data.list || []
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('加载投递记录失败:', error)
+    if (error.message?.includes('登录') || error.message?.includes('401')) {
+      userStore.logout()
+      router.push('/login')
+    }
   }
 }
 
@@ -65,13 +70,40 @@ function clearJob() {
   selectedJobTitle.value = ''
 }
 
-function handleImageUpload() {
+const uploadingImages = ref(false)
+
+async function handleImageUpload() {
   if (images.value.length >= 9) {
     showToast({ message: '最多上传9张图片', type: 'fail' })
     return
   }
-  const mockImage = `https://picsum.photos/200/200?random=${Date.now()}`
-  images.value.push(mockImage)
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.multiple = true
+  input.onchange = async (e: any) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    const remaining = 9 - images.value.length
+    const filesToUpload = Array.from(files).slice(0, remaining)
+
+    try {
+      uploadingImages.value = true
+      for (const file of filesToUpload) {
+        const res = await uploadEvidence(file as File)
+        if (res.code === 200 && res.data && res.data.url) {
+          images.value.push('/api' + res.data.url)
+        } else {
+          showToast({ message: res.message || '图片上传失败', type: 'fail' })
+        }
+      }
+    } catch (error: any) {
+      showToast({ message: error?.message || '图片上传失败', type: 'fail' })
+    } finally {
+      uploadingImages.value = false
+    }
+  }
+  input.click()
 }
 
 function removeImage(index: number) {
@@ -90,12 +122,13 @@ async function handleSubmit() {
 
   try {
     submitting.value = true
+    const imageUrls = images.value.map(img => img.replace(/^\/api/, ''))
     const res = await createComplaint({
       type: selectedType.value,
       job_id: selectedJobId.value || undefined,
       target_name: targetName.value,
       content: content.value,
-      images: images.value,
+      images: imageUrls,
     })
 
     if (res.code === 200) {
@@ -118,6 +151,16 @@ function goBack() {
 onMounted(() => {
   loadTypes()
   loadApplyList()
+
+  const queryJobId = route.query.job_id as string
+  const queryJobTitle = route.query.job_title as string
+  const queryEnterpriseName = route.query.enterprise_name as string
+
+  if (queryJobId) {
+    selectedJobId.value = queryJobId
+    selectedJobTitle.value = queryJobTitle || ''
+    targetName.value = queryEnterpriseName || ''
+  }
 })
 </script>
 
@@ -203,10 +246,11 @@ onMounted(() => {
             <div
               v-if="images.length < 9"
               class="upload-btn"
+              :class="{ uploading: uploadingImages }"
               @click="handleImageUpload"
             >
-              <span class="upload-icon">📷</span>
-              <span class="upload-text">添加图片</span>
+              <span class="upload-icon">{{ uploadingImages ? '⏳' : '📷' }}</span>
+              <span class="upload-text">{{ uploadingImages ? '上传中...' : '添加图片' }}</span>
             </div>
           </div>
         </div>
@@ -467,6 +511,11 @@ onMounted(() => {
 
   &:active {
     background-color: var(--color-bg-tertiary);
+  }
+
+  &.uploading {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 

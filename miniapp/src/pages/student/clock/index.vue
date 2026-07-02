@@ -1,52 +1,60 @@
 <template>
   <view class="page">
     <view class="clock-header">
-      <view class="date-info">
-        <text class="date-text">{{ currentDate }}</text>
-        <text class="week-text">{{ currentWeek }}</text>
-      </view>
-      <view class="status-badge" :class="clockStatus">
-        <text class="status-text">{{ clockStatusText }}</text>
+      <view class="header-top">
+        <view class="date-info">
+          <text class="date-text">{{ currentDate }}</text>
+          <text class="week-text">{{ currentWeek }}</text>
+        </view>
+        <view class="status-badge" :class="clockStatus">
+          <text class="status-dot"></text>
+          <text class="status-text">{{ clockStatusText }}</text>
+        </view>
       </view>
     </view>
 
-    <view class="location-info">
-      <text class="location-icon">📍</text>
-      <text class="location-text">{{ currentLocation }}</text>
-      <text class="location-update" @click="getLocation">更新位置</text>
+    <view class="location-card">
+      <view class="location-icon-wrap">
+        <text class="location-icon">📍</text>
+      </view>
+      <view class="location-content">
+        <text class="location-label">当前位置</text>
+        <text class="location-text">{{ currentLocation }}</text>
+      </view>
+      <view class="location-action" @click="getLocation">
+        <text class="action-text">刷新</text>
+      </view>
     </view>
 
-    <view class="clock-card" :class="{ abnormal: isAbnormal }">
+    <view class="clock-card" :class="{ abnormal: isAbnormal, show: showSuccess }">
       <view class="clock-circle" :class="clockState" @click="handleClock">
+        <view class="circle-ring"></view>
+        <view class="circle-ring outer"></view>
         <view class="circle-inner">
-          <text class="clock-icon">{{ clockState === 'clocked-out' ? '🚀' : '✓' }}</text>
+          <text class="clock-icon">{{ clockState === 'clocked-out' ? '⏰' : '✅' }}</text>
           <text class="clock-text">{{ clockState === 'clocked-out' ? '上班打卡' : '下班打卡' }}</text>
           <text class="clock-subtext">{{ clockState === 'clocked-out' ? '点击开始工作' : '点击结束工作' }}</text>
         </view>
       </view>
-      <view class="clock-time" v-if="clockState === 'clocked-in'">
-        <text class="time-label">当前工作时长</text>
-        <text class="time-value">{{ workDuration }}</text>
-      </view>
-    </view>
 
-    <view class="section">
-      <text class="section-title">今日任务</text>
-      <view class="task-list">
-        <view class="task-item" v-for="task in todayTasks" :key="task.id">
-          <view class="task-checkbox" :class="{ checked: task.completed }" @click="toggleTask(task)">
-            <text class="checkbox-icon" v-if="task.completed">✓</text>
-          </view>
-          <view class="task-content">
-            <text class="task-name">{{ task.name }}</text>
-            <text class="task-time">{{ task.time }}</text>
-          </view>
+      <view class="clock-stats">
+        <view class="stat-item">
+          <text class="stat-value">{{ workDuration }}</text>
+          <text class="stat-label">今日工作时长</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{ clockInTime || '--:--' }}</text>
+          <text class="stat-label">上班打卡时间</text>
         </view>
       </view>
     </view>
 
     <view class="section">
-      <text class="section-title">打卡记录</text>
+      <view class="section-header">
+        <text class="section-title">打卡记录</text>
+        <text class="section-more">查看全部</text>
+      </view>
       <view class="record-list">
         <view class="record-item" v-for="record in clockRecords" :key="record.id">
           <view class="record-date">
@@ -59,13 +67,19 @@
               <view class="record-status-dot" :class="record.is_abnormal ? 'abnormal' : 'normal'"></view>
             </view>
             <view class="record-times">
-              <text class="time-item" :class="{ abnormal: !record.clock_in_time }">
-                {{ record.clock_in_time || '未打卡' }}
-              </text>
-              <text class="time-arrow">→</text>
-              <text class="time-item" :class="{ abnormal: !record.clock_out_time }">
-                {{ record.clock_out_time || '未打卡' }}
-              </text>
+              <view class="time-block">
+                <text class="time-label">上班</text>
+                <text class="time-value" :class="{ abnormal: !record.clock_in_time }">
+                  {{ record.clock_in_time || '未打卡' }}
+                </text>
+              </view>
+              <view class="time-arrow">→</view>
+              <view class="time-block">
+                <text class="time-label">下班</text>
+                <text class="time-value" :class="{ abnormal: !record.clock_out_time }">
+                  {{ record.clock_out_time || '未打卡' }}
+                </text>
+              </view>
             </view>
           </view>
           <view class="record-actions">
@@ -86,14 +100,28 @@
               class="appeal-status rejected" 
               v-else-if="record.appeal_status === 'rejected'"
             >已驳回</text>
+            <text v-else class="record-normal">正常</text>
           </view>
         </view>
       </view>
     </view>
 
+    <view class="success-animation" v-if="showSuccess">
+      <view class="success-content">
+        <view class="success-icon-wrap">
+          <text class="success-icon">✓</text>
+        </view>
+        <text class="success-title">打卡成功</text>
+        <text class="success-time">{{ successTime }}</text>
+      </view>
+    </view>
+
     <view class="appeal-modal" v-if="showAppeal">
       <view class="appeal-content">
-        <text class="appeal-title">异常打卡申诉</text>
+        <view class="modal-header">
+          <text class="appeal-title">异常打卡申诉</text>
+          <text class="modal-close" @click="closeAppeal">✕</text>
+        </view>
         <view class="appeal-form">
           <view class="form-item">
             <text class="form-label">申诉原因</text>
@@ -102,6 +130,7 @@
               placeholder="请输入申诉原因..." 
               v-model="appealReason"
               :maxlength="500"
+              placeholder-class="input-placeholder"
             />
           </view>
           <view class="form-item">
@@ -112,8 +141,10 @@
                 v-for="(image, index) in appealImages" 
                 :key="index"
               >
-                <image class="upload-image" :src="image" mode="widthFix" />
-                <text class="upload-remove" @click="removeImage(index)">×</text>
+                <image class="upload-image" :src="image" mode="aspectFill" />
+                <view class="upload-remove" @click="removeImage(index)">
+                  <text class="remove-icon">×</text>
+                </view>
               </view>
               <view 
                 class="upload-btn" 
@@ -121,50 +152,57 @@
                 @click="chooseImage"
               >
                 <text class="upload-icon">+</text>
+                <text class="upload-text">上传</text>
               </view>
             </view>
           </view>
         </view>
         <view class="appeal-footer">
-          <button class="cancel-btn" @click="closeAppeal">取消</button>
-          <button 
+          <view class="cancel-btn" @click="closeAppeal">取消</view>
+          <view 
             class="submit-btn" 
             :class="{ disabled: !appealReason.trim() }"
             @click="submitAppeal"
-          >提交申诉</button>
+          >提交申诉</view>
         </view>
       </view>
     </view>
 
     <view class="distance-modal" v-if="showDistanceModal">
       <view class="distance-content">
-        <text class="distance-icon">⚠️</text>
+        <view class="distance-icon-wrap">
+          <text class="distance-icon">⚠️</text>
+        </view>
         <text class="distance-title">位置较远提醒</text>
         <text class="distance-desc">当前位置距岗位地址较远（{{ distanceToJob }}米），是否继续打卡？</text>
         <text class="distance-sub">继续打卡将标记为异常打卡，需填写说明</text>
         <view class="distance-footer">
-          <button class="cancel-btn" @click="showDistanceModal = false">取消</button>
-          <button class="confirm-btn" @click="confirmAbnormalClock">继续打卡</button>
+          <view class="cancel-btn" @click="showDistanceModal = false">取消</view>
+          <view class="confirm-btn" @click="confirmAbnormalClock">继续打卡</view>
         </view>
       </view>
     </view>
 
     <view class="abnormal-reason-modal" v-if="showAbnormalReason">
       <view class="abnormal-content">
-        <text class="abnormal-title">填写异常说明</text>
+        <view class="modal-header">
+          <text class="abnormal-title">填写异常说明</text>
+          <text class="modal-close" @click="showAbnormalReason = false">✕</text>
+        </view>
         <textarea 
           class="abnormal-textarea" 
           placeholder="请输入异常原因（如交通堵塞、临时外出等）..." 
           v-model="abnormalReason"
           :maxlength="200"
+          placeholder-class="input-placeholder"
         />
         <view class="abnormal-footer">
-          <button class="cancel-btn" @click="showAbnormalReason = false">取消</button>
-          <button 
+          <view class="cancel-btn" @click="showAbnormalReason = false">取消</view>
+          <view 
             class="confirm-btn" 
             :class="{ disabled: !abnormalReason.trim() }"
             @click="submitAbnormalClock"
-          >确认提交</button>
+          >确认提交</view>
         </view>
       </view>
     </view>
@@ -186,12 +224,8 @@ const clockInTime = ref('')
 const workDuration = ref('0小时0分钟')
 const isAbnormal = ref(false)
 const distanceToJob = ref(0)
-
-const todayTasks = ref([
-  { id: 1, name: '完成初中数学辅导', time: '09:00-12:00', completed: true },
-  { id: 2, name: '批改学生作业', time: '14:00-16:00', completed: false },
-  { id: 3, name: '准备明天课程', time: '16:00-17:00', completed: false }
-])
+const showSuccess = ref(false)
+const successTime = ref('')
 
 const clockRecords = ref<ClockRecord[]>([])
 
@@ -265,6 +299,14 @@ const updateWorkDuration = () => {
   workDuration.value = `${hours}小时${minutes}分钟`
 }
 
+const showSuccessAnimation = () => {
+  successTime.value = dayjs().format('HH:mm:ss')
+  showSuccess.value = true
+  setTimeout(() => {
+    showSuccess.value = false
+  }, 2000)
+}
+
 const handleClock = () => {
   if (currentLocation.value === '获取位置中...' || currentLocation.value.includes('失败')) {
     getLocation()
@@ -301,7 +343,7 @@ const submitAbnormalClock = () => {
   abnormalReason.value = ''
 }
 
-const doClockIn = async (isAbnormal: boolean) => {
+const doClockIn = async (isAbnormalClock: boolean) => {
   uni.showLoading({ title: '打卡中...' })
   
   try {
@@ -311,15 +353,15 @@ const doClockIn = async (isAbnormal: boolean) => {
       latitude: currentLatitude.value,
       longitude: currentLongitude.value,
       address: currentLocation.value,
-      abnormal_reason: isAbnormal ? abnormalReason.value : undefined
+      abnormal_reason: isAbnormalClock ? abnormalReason.value : undefined
     })
     
     uni.hideLoading()
     clockState.value = 'clocked-in'
-    clockInTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
-    isAbnormal.value = isAbnormal
+    clockInTime.value = dayjs().format('HH:mm')
+    isAbnormal.value = isAbnormalClock
     
-    uni.showToast({ title: '签到成功', icon: 'success' })
+    showSuccessAnimation()
     
     workTimer = setInterval(updateWorkDuration, 60000)
   } catch (error) {
@@ -328,7 +370,7 @@ const doClockIn = async (isAbnormal: boolean) => {
   }
 }
 
-const doClockOut = async (isAbnormal: boolean) => {
+const doClockOut = async (isAbnormalClock: boolean) => {
   uni.showModal({
     title: '提示',
     content: '确定要下班打卡吗？',
@@ -343,7 +385,7 @@ const doClockOut = async (isAbnormal: boolean) => {
             latitude: currentLatitude.value,
             longitude: currentLongitude.value,
             address: currentLocation.value,
-            abnormal_reason: isAbnormal ? abnormalReason.value : undefined
+            abnormal_reason: isAbnormalClock ? abnormalReason.value : undefined
           })
           
           uni.hideLoading()
@@ -352,12 +394,13 @@ const doClockOut = async (isAbnormal: boolean) => {
           workDuration.value = '0小时0分钟'
           isAbnormal.value = false
           
+          showSuccessAnimation()
+          
           if (workTimer) {
             clearInterval(workTimer)
             workTimer = null
           }
           
-          uni.showToast({ title: '下班打卡成功', icon: 'success' })
           loadClockRecords()
         } catch (error) {
           uni.hideLoading()
@@ -366,10 +409,6 @@ const doClockOut = async (isAbnormal: boolean) => {
       }
     }
   })
-}
-
-const toggleTask = (task: { id: number; completed: boolean }) => {
-  task.completed = !task.completed
 }
 
 const loadClockRecords = async () => {
@@ -460,14 +499,18 @@ onUnmounted(() => {
 .page {
   min-height: 100vh;
   background-color: #F2F3F5;
+  padding-bottom: 40rpx;
 }
 
 .clock-header {
+  background: linear-gradient(180deg, #165DFF 0%, #4080FF 100%);
+  padding: 60rpx 32rpx 80rpx;
+}
+
+.header-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background-color: #FFFFFF;
-  padding: 32rpx;
+  align-items: flex-start;
 }
 
 .date-info {
@@ -476,65 +519,105 @@ onUnmounted(() => {
 }
 
 .date-text {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #1F2329;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #FFFFFF;
 }
 
 .week-text {
   font-size: 26rpx;
-  color: #86909C;
+  color: rgba(255, 255, 255, 0.8);
   margin-top: 8rpx;
 }
 
 .status-badge {
+  display: flex;
+  align-items: center;
   font-size: 24rpx;
   padding: 12rpx 24rpx;
   border-radius: 32rpx;
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
-.status-badge.not-clock {
-  background-color: #FFF2F0;
-  color: #FF4D4F;
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+  background-color: #FF7D00;
 }
 
-.status-badge.clocked-in {
-  background-color: #F6FFED;
-  color: #52C41A;
+.status-badge.clocked-in .status-dot {
+  background-color: #52C41A;
 }
 
-.location-info {
+.status-text {
+  color: #FFFFFF;
+  font-size: 24rpx;
+}
+
+.location-card {
   display: flex;
   align-items: center;
   background-color: #FFFFFF;
-  padding: 24rpx 32rpx;
-  margin-top: 20rpx;
+  margin: -40rpx 24rpx 24rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.location-icon-wrap {
+  width: 64rpx;
+  height: 64rpx;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
 }
 
 .location-icon {
   font-size: 32rpx;
-  margin-right: 12rpx;
+}
+
+.location-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.location-label {
+  font-size: 24rpx;
+  color: #86909C;
+  margin-bottom: 6rpx;
 }
 
 .location-text {
-  flex: 1;
   font-size: 26rpx;
-  color: #4E5969;
+  color: #1F2329;
 }
 
-.location-update {
-  font-size: 26rpx;
+.location-action {
+  padding: 12rpx 24rpx;
+  background-color: #E8F0FF;
+  border-radius: 24rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
   color: #165DFF;
 }
 
 .clock-card {
-  margin: 24rpx;
   background-color: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 48rpx;
+  margin: 0 24rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 48rpx 32rpx 32rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
 }
 
 .clock-card.abnormal {
@@ -542,41 +625,67 @@ onUnmounted(() => {
 }
 
 .clock-circle {
+  position: relative;
   width: 320rpx;
   height: 320rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  margin-bottom: 40rpx;
 }
 
-.clock-circle.clocked-out {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.circle-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  opacity: 0.2;
+  transform: scale(1.15);
 }
 
-.clock-circle.clocked-in {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.clock-circle:active {
-  transform: scale(0.95);
+.circle-ring.outer {
+  opacity: 0.1;
+  transform: scale(1.3);
 }
 
 .circle-inner {
+  position: relative;
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 12rpx 40rpx rgba(22, 93, 255, 0.4);
+}
+
+.clock-circle.clocked-in .circle-ring,
+.clock-circle.clocked-in .circle-inner {
+  background: linear-gradient(135deg, #52C41A 0%, #73D13D 100%);
+}
+
+.clock-circle.clocked-in .circle-inner {
+  box-shadow: 0 12rpx 40rpx rgba(82, 196, 26, 0.4);
+}
+
+.clock-circle:active .circle-inner {
+  transform: scale(0.95);
+  transition: transform 0.2s;
 }
 
 .clock-icon {
-  font-size: 80rpx;
-  margin-bottom: 16rpx;
+  font-size: 72rpx;
+  margin-bottom: 12rpx;
 }
 
 .clock-text {
   font-size: 36rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #FFFFFF;
   margin-bottom: 8rpx;
 }
@@ -586,88 +695,59 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.clock-time {
-  margin-top: 32rpx;
+.clock-stats {
+  display: flex;
+  width: 100%;
+  padding: 0 24rpx;
+}
+
+.stat-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.time-label {
-  font-size: 26rpx;
-  color: #86909C;
+.stat-value {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1F2329;
   margin-bottom: 8rpx;
 }
 
-.time-value {
-  font-size: 48rpx;
-  font-weight: bold;
-  color: #165DFF;
+.stat-label {
+  font-size: 24rpx;
+  color: #86909C;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background-color: #E5E6EB;
+  margin: 0 16rpx;
 }
 
 .section {
   background-color: #FFFFFF;
+  margin: 0 24rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24rpx;
-  padding: 32rpx;
 }
 
 .section-title {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #1F2329;
-  margin-bottom: 24rpx;
-  display: block;
-}
-
-.task-list {
-  padding: 0;
-}
-
-.task-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #F2F3F5;
-}
-
-.task-item:last-child {
-  border-bottom: none;
-}
-
-.task-checkbox {
-  width: 48rpx;
-  height: 48rpx;
-  border: 2rpx solid #C9CDD4;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20rpx;
-}
-
-.task-checkbox.checked {
-  background-color: #165DFF;
-  border-color: #165DFF;
-}
-
-.checkbox-icon {
-  font-size: 24rpx;
-  color: #FFFFFF;
-}
-
-.task-content {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.task-name {
-  font-size: 28rpx;
+  font-weight: 600;
   color: #1F2329;
 }
 
-.task-time {
+.section-more {
   font-size: 24rpx;
   color: #86909C;
 }
@@ -679,7 +759,7 @@ onUnmounted(() => {
 .record-item {
   display: flex;
   align-items: center;
-  padding: 24rpx 0;
+  padding: 20rpx 0;
   border-bottom: 1rpx solid #F2F3F5;
 }
 
@@ -688,26 +768,26 @@ onUnmounted(() => {
 }
 
 .record-date {
-  width: 100rpx;
+  width: 80rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .date-num {
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 32rpx;
+  font-weight: 600;
   color: #1F2329;
 }
 
 .date-week {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #86909C;
 }
 
 .record-info {
   flex: 1;
-  margin-left: 24rpx;
+  margin-left: 16rpx;
 }
 
 .record-job {
@@ -718,14 +798,15 @@ onUnmounted(() => {
 
 .job-name {
   font-size: 28rpx;
+  font-weight: 500;
   color: #1F2329;
 }
 
 .record-status-dot {
-  width: 16rpx;
-  height: 16rpx;
+  width: 12rpx;
+  height: 12rpx;
   border-radius: 50%;
-  margin-left: 12rpx;
+  margin-left: 10rpx;
 }
 
 .record-status-dot.normal {
@@ -741,12 +822,24 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.time-item {
-  font-size: 26rpx;
-  color: #52C41A;
+.time-block {
+  display: flex;
+  flex-direction: column;
 }
 
-.time-item.abnormal {
+.time-label {
+  font-size: 20rpx;
+  color: #C9CDD4;
+  margin-bottom: 4rpx;
+}
+
+.time-value {
+  font-size: 26rpx;
+  color: #52C41A;
+  font-weight: 500;
+}
+
+.time-value.abnormal {
   color: #FF4D4F;
 }
 
@@ -757,16 +850,19 @@ onUnmounted(() => {
 }
 
 .record-actions {
-  margin-left: 24rpx;
+  margin-left: 16rpx;
 }
 
 .appeal-btn {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #165DFF;
+  padding: 8rpx 20rpx;
+  background-color: #E8F0FF;
+  border-radius: 20rpx;
 }
 
 .appeal-status {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #FAAD14;
 }
 
@@ -776,6 +872,60 @@ onUnmounted(() => {
 
 .appeal-status.rejected {
   color: #FF4D4F;
+}
+
+.record-normal {
+  font-size: 22rpx;
+  color: #52C41A;
+}
+
+.success-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.success-icon-wrap {
+  width: 160rpx;
+  height: 160rpx;
+  background: linear-gradient(135deg, #52C41A 0%, #73D13D 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  box-shadow: 0 12rpx 40rpx rgba(82, 196, 26, 0.4);
+}
+
+.success-icon {
+  font-size: 80rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.success-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 12rpx;
+}
+
+.success-time {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .appeal-modal, .distance-modal, .abnormal-reason-modal {
@@ -789,21 +939,32 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 48rpx;
 }
 
 .appeal-content, .distance-content, .abnormal-content {
-  width: 680rpx;
+  width: 100%;
   background-color: #FFFFFF;
-  border-radius: 24rpx;
-  padding: 40rpx;
+  border-radius: 16rpx;
+  padding: 32rpx;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
 }
 
 .appeal-title, .distance-title, .abnormal-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #1F2329;
-  margin-bottom: 24rpx;
-  display: block;
+}
+
+.modal-close {
+  font-size: 32rpx;
+  color: #C9CDD4;
 }
 
 .appeal-form {
@@ -814,7 +975,7 @@ onUnmounted(() => {
   margin-bottom: 24rpx;
 }
 
-.form-label, .abnormal-label {
+.form-label {
   font-size: 28rpx;
   color: #4E5969;
   margin-bottom: 16rpx;
@@ -826,19 +987,26 @@ onUnmounted(() => {
   height: 200rpx;
   font-size: 28rpx;
   padding: 20rpx;
-  background-color: #F2F3F5;
-  border-radius: 12rpx;
+  background-color: #F7F8FA;
+  border-radius: 16rpx;
+  color: #1F2329;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+
+.input-placeholder {
+  color: #C9CDD4;
 }
 
 .image-upload {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .upload-item {
-  width: 180rpx;
-  height: 180rpx;
+  width: 160rpx;
+  height: 160rpx;
   position: relative;
   border-radius: 12rpx;
   overflow: hidden;
@@ -853,30 +1021,41 @@ onUnmounted(() => {
   position: absolute;
   top: 8rpx;
   right: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
   background-color: rgba(0, 0, 0, 0.5);
-  color: #FFFFFF;
-  font-size: 28rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+}
+
+.remove-icon {
+  font-size: 28rpx;
+  color: #FFFFFF;
 }
 
 .upload-btn {
-  width: 180rpx;
-  height: 180rpx;
-  border: 2rpx dashed #C9CDD4;
+  width: 160rpx;
+  height: 160rpx;
+  border: 2rpx dashed #D9D9D9;
   border-radius: 12rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  background-color: #F7F8FA;
 }
 
 .upload-icon {
-  font-size: 48rpx;
+  font-size: 40rpx;
   color: #C9CDD4;
+  margin-bottom: 4rpx;
+}
+
+.upload-text {
+  font-size: 22rpx;
+  color: #86909C;
 }
 
 .appeal-footer, .distance-footer, .abnormal-footer {
@@ -886,45 +1065,62 @@ onUnmounted(() => {
 
 .cancel-btn {
   flex: 1;
-  font-size: 32rpx;
-  color: #86909C;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  color: #4E5969;
   background-color: #F2F3F5;
-  padding: 24rpx;
-  border-radius: 48rpx;
-  border: none;
+  border-radius: 24rpx;
+  text-align: center;
 }
 
 .submit-btn, .confirm-btn {
   flex: 1;
-  font-size: 32rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 30rpx;
+  font-weight: 600;
   color: #FFFFFF;
-  background-color: #165DFF;
-  padding: 24rpx;
-  border-radius: 48rpx;
-  border: none;
+  background: linear-gradient(90deg, #165DFF 0%, #4080FF 100%);
+  border-radius: 24rpx;
+  text-align: center;
 }
 
 .submit-btn.disabled, .confirm-btn.disabled {
-  background-color: #C9CDD4;
+  background: #C9CDD4;
+}
+
+.distance-content {
+  text-align: center;
+}
+
+.distance-icon-wrap {
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #FFF7E6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24rpx;
 }
 
 .distance-icon {
-  font-size: 80rpx;
-  display: block;
-  text-align: center;
-  margin-bottom: 24rpx;
+  font-size: 48rpx;
 }
 
-.distance-desc, .distance-sub {
+.distance-desc {
   font-size: 28rpx;
   color: #4E5969;
   display: block;
-  text-align: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
+  line-height: 1.6;
 }
 
 .distance-sub {
+  font-size: 24rpx;
   color: #FF4D4F;
-  font-size: 26rpx;
+  display: block;
+  margin-bottom: 32rpx;
 }
 </style>

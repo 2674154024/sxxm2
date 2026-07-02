@@ -4,10 +4,14 @@ server:
 spring:
   application:
     name: admin-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     url: jdbc:mysql://localhost:3307/parttime_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root
-    password: ${MYSQL_ROOT_PASSWORD:}
+    password: ${MYSQL_ROOT_PASSWORD:parttime@2024}
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
 
@@ -32,5 +36,5 @@ admin:
     - 192.168.0.0/16
 
 jwt:
-  secret: ${JWT_SECRET:your_jwt_secret}
+  secret: ${JWT_SECRET:parttime-platform-jwt-secret-2024}
   expire-seconds: 86400

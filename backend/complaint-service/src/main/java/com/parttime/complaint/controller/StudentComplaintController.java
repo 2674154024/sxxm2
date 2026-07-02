@@ -22,14 +22,22 @@ public class StudentComplaintController {
     @Autowired
     private ComplaintService complaintService;
 
-    @PostMapping("/complaint")
-    @AuditLog(module = "投诉管理", action = "发起投诉")
-    public R<ComplaintResponse> createComplaint(@Valid @RequestBody ComplaintRequest request, HttpServletRequest httpRequest) {
+    private String getStudentId(HttpServletRequest httpRequest) {
+        String gatewayUserId = httpRequest.getHeader("X-User-Id");
+        if (gatewayUserId != null && !gatewayUserId.isEmpty()) {
+            return gatewayUserId;
+        }
         String token = httpRequest.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        String studentId = JwtUtil.getUserId(token);
+        return JwtUtil.getUserId(token);
+    }
+
+    @PostMapping("/complaint")
+    @AuditLog(module = "投诉管理", action = "发起投诉")
+    public R<ComplaintResponse> createComplaint(@Valid @RequestBody ComplaintRequest request, HttpServletRequest httpRequest) {
+        String studentId = getStudentId(httpRequest);
         ComplaintResponse response = complaintService.createComplaint(studentId, request.getDefendantId(),
                 request.getDefendantType(), request.getJobId(), request.getComplaintType(),
                 request.getComplaintContent(), request.getEvidenceUrls());
@@ -41,11 +49,7 @@ public class StudentComplaintController {
     public R<List<ComplaintResponse>> getComplaintList(HttpServletRequest httpRequest,
                                                        @RequestParam(defaultValue = "1") Integer page,
                                                        @RequestParam(defaultValue = "20") Integer size) {
-        String token = httpRequest.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        String studentId = JwtUtil.getUserId(token);
+        String studentId = getStudentId(httpRequest);
         List<ComplaintResponse> complaints = complaintService.getStudentComplaints(studentId, page, size);
         return R.ok(complaints);
     }
@@ -53,11 +57,7 @@ public class StudentComplaintController {
     @PostMapping("/feedback")
     @AuditLog(module = "评价管理", action = "学生评价")
     public R<FeedbackResponse> studentFeedback(@Valid @RequestBody FeedbackRequest request, HttpServletRequest httpRequest) {
-        String token = httpRequest.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-        }
-        String studentId = JwtUtil.getUserId(token);
+        String studentId = getStudentId(httpRequest);
         FeedbackResponse response = complaintService.studentFeedback(studentId, request.getToId(),
                 request.getJobId(), request.getScore(), request.getComment());
         return R.ok(response);

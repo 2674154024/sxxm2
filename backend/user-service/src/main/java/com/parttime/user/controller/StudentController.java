@@ -45,7 +45,14 @@ public class StudentController {
     @PostMapping("/resume")
     public R<String> saveResume(@RequestAttribute("X-User-Id") String userId,
                               @Validated @RequestBody ResumeRequest request) {
-        studentService.saveResume(userId, request.getAvailableTime(), request.getSkillTags());
+        studentService.saveResume(userId, request);
         return R.ok("简历保存成功");
+    }
+
+    @PutMapping("/resume")
+    public R<String> updateResume(@RequestAttribute("X-User-Id") String userId,
+                               @Validated @RequestBody ResumeRequest request) {
+        studentService.saveResume(userId, request);
+        return R.ok("简历更新成功");
     }
 }

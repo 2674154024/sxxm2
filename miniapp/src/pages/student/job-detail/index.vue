@@ -1,85 +1,141 @@
 <template>
   <view class="page">
     <view v-if="loading" class="loading-mask">
-      <text class="loading-text">加载中...</text>
+      <view class="loading-content">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
     </view>
 
     <view v-else class="content">
-      <view class="header-image">
-        <image class="header-img" :src="jobData.cover_image || defaultCover" mode="aspectFill" />
-        <view class="header-overlay">
-          <text class="job-name">{{ jobData.job_name }}</text>
-          <text class="job-salary">¥{{ jobData.salary }}/{{ getSalaryUnit(jobData.salary_type) }}</text>
-        </view>
-      </view>
+      <view class="header-section">
+        <view class="header-bg"></view>
+        <view class="header-content">
+          <view class="job-title-row">
+            <text class="job-name">{{ jobData.job_name }}</text>
+          </view>
+          <view class="job-salary-row">
+            <text class="job-salary">¥{{ jobData.salary }}</text>
+            <text class="salary-unit">/{{ getSalaryUnit(jobData.salary_type) }}</text>
+          </view>
 
-      <view class="company-info-row">
-        <text class="company-name">{{ jobData.company_name }}</text>
-        <view v-if="jobData.is_certified" class="certified-tag">认证企业</view>
-        <view class="credit-badge">
-          <text class="credit-icon">⭐</text>
-          <text class="credit-text">{{ jobData.credit_score }}分</text>
-        </view>
-      </view>
+          <view class="company-row">
+            <text class="company-name">{{ jobData.company_name }}</text>
+            <view v-if="jobData.is_certified" class="certified-tag">
+              <text class="certified-icon">✓</text>
+              <text class="certified-text">认证企业</text>
+            </view>
+            <view class="credit-badge">
+              <text class="credit-icon">⭐</text>
+              <text class="credit-text">{{ jobData.credit_score }}分</text>
+            </view>
+          </view>
 
-      <view class="info-card">
-        <view class="info-item" @click="handleMapNavigation">
-          <text class="info-icon">📍</text>
-          <text class="info-label">工作地址</text>
-          <text class="info-value">{{ jobData.address }}</text>
-          <text class="info-arrow">›</text>
-        </view>
-        <view class="info-item">
-          <text class="info-icon">⏰</text>
-          <text class="info-label">工作时间</text>
-          <text class="info-value">{{ formatWorkTime(jobData.work_time) }}</text>
-        </view>
-        <view class="info-item">
-          <text class="info-icon">💰</text>
-          <text class="info-label">结算方式</text>
-          <view class="settlement-tag" :class="jobData.settlement_type">
-            {{ getSettlementText(jobData.settlement_type) }}
+          <view class="info-row">
+            <view class="info-item">
+              <text class="info-icon">📍</text>
+              <text class="info-text">{{ jobData.address }}</text>
+            </view>
+          </view>
+
+          <view class="info-row">
+            <view class="info-item">
+              <text class="info-icon">⏰</text>
+              <text class="info-text">{{ formatWorkTime(jobData.work_time) }}</text>
+            </view>
+          </view>
+
+          <view class="info-row">
+            <view class="info-item">
+              <text class="info-icon">👥</text>
+              <text class="info-text">招聘{{ jobData.total_count }}人，已招{{ jobData.hired_count }}人</text>
+            </view>
+          </view>
+
+          <view class="tag-row">
+            <view class="settlement-tag" :class="jobData.settlement_type">
+              {{ getSettlementText(jobData.settlement_type) }}
+            </view>
+            <view v-if="jobData.has_insurance" class="insurance-tag">
+              <text class="insurance-tag-icon">🛡️</text>
+              <text class="insurance-tag-text">含意外险</text>
+            </view>
+            <view class="skill-tag" v-for="skill in jobData.skill_tags.slice(0, 3)" :key="skill">
+              {{ skill }}
+            </view>
           </view>
         </view>
-        <view class="info-item">
-          <text class="info-icon">👥</text>
-          <text class="info-label">招聘人数</text>
-          <text class="info-value">{{ jobData.hired_count }}/{{ jobData.total_count }}人</text>
-        </view>
-        <view class="info-item skills-item">
-          <text class="info-icon">📋</text>
-          <text class="info-label">技能要求</text>
-          <view class="skill-tags">
-            <view class="skill-tag" v-for="skill in jobData.skill_tags" :key="skill">{{ skill }}</view>
-          </view>
-        </view>
       </view>
 
-      <view class="section">
+      <view class="card-section">
         <view class="section-header">
           <text class="section-title">岗位描述</text>
-          <text class="expand-btn" @click="toggleDescription">{{ descExpanded ? '收起' : '展开' }}</text>
         </view>
         <view class="description-content" :class="{ expanded: descExpanded }">
           <rich-text :nodes="jobData.description"></rich-text>
         </view>
-      </view>
-
-      <view class="safety-card">
-        <view class="safety-icon-wrap">
-          <text class="safety-icon">🛡️</text>
-        </view>
-        <view class="safety-content">
-          <text class="safety-title">安全保障</text>
-          <text class="safety-desc">本岗位支持薪资托管，薪资由平台担保发放</text>
-          <text class="insurance-text" :class="{ recommended: !jobData.has_insurance }">
-            {{ jobData.has_insurance ? '含兼职意外险' : '建议企业购买意外险' }}
-          </text>
+        <view class="expand-wrap" @click="toggleDescription">
+          <text class="expand-btn">{{ descExpanded ? '收起' : '展开' }}</text>
+          <text class="expand-arrow">{{ descExpanded ? '↑' : '↓' }}</text>
         </view>
       </view>
 
-      <view v-if="jobData.similar_jobs && jobData.similar_jobs.length > 0" class="section">
-        <text class="section-title">相似岗位推荐</text>
+      <view class="card-section company-card" @click="handleCompanyClick">
+        <view class="company-logo">
+          <text class="logo-icon">🏢</text>
+        </view>
+        <view class="company-info">
+          <view class="company-name-row">
+            <text class="company-name-text">{{ jobData.company_name }}</text>
+            <view v-if="jobData.is_certified" class="certified-badge">
+              <text class="badge-icon">✓</text>
+              <text class="badge-text">认证</text>
+            </view>
+          </view>
+          <text class="company-desc">信用评分 {{ jobData.credit_score }} 分</text>
+        </view>
+        <text class="company-arrow">›</text>
+      </view>
+
+      <view class="card-section safety-section">
+        <view class="section-header">
+          <text class="section-title">安全保障</text>
+        </view>
+        <view class="safety-list">
+          <view class="safety-item">
+            <view class="safety-icon-wrap blue">
+              <text class="safety-icon">💰</text>
+            </view>
+            <view class="safety-item-info">
+              <text class="safety-item-title">薪资托管</text>
+              <text class="safety-item-desc">薪资由平台担保发放</text>
+            </view>
+          </view>
+          <view class="safety-item">
+            <view class="safety-icon-wrap green" :class="{ gray: !jobData.has_insurance }">
+              <text class="safety-icon">🛡️</text>
+            </view>
+            <view class="safety-item-info">
+              <text class="safety-item-title">兼职意外险</text>
+              <text class="safety-item-desc">{{ jobData.has_insurance ? '已购买意外险' : '建议企业购买' }}</text>
+            </view>
+          </view>
+          <view class="safety-item">
+            <view class="safety-icon-wrap orange">
+              <text class="safety-icon">✅</text>
+            </view>
+            <view class="safety-item-info">
+              <text class="safety-item-title">零押金</text>
+              <text class="safety-item-desc">平台严禁收取任何费用</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="jobData.similar_jobs && jobData.similar_jobs.length > 0" class="card-section">
+        <view class="section-header">
+          <text class="section-title">相似岗位</text>
+        </view>
         <scroll-view class="similar-scroll" scroll-x :show-scrollbar="false">
           <view class="similar-list">
             <view
@@ -91,7 +147,12 @@
               <text class="similar-name">{{ item.job_name }}</text>
               <text class="similar-salary">¥{{ item.salary }}/{{ getSalaryUnit(item.salary_type) }}</text>
               <text class="similar-company">{{ item.company_name }}</text>
-              <text class="similar-distance">{{ item.distance }}km</text>
+              <view class="similar-bottom">
+                <view class="settlement-tag small" :class="item.settlement_type">
+                  {{ getSettlementText(item.settlement_type) }}
+                </view>
+                <text class="similar-distance">{{ item.distance }}km</text>
+              </view>
             </view>
           </view>
         </scroll-view>
@@ -102,17 +163,19 @@
       <view class="bottom-left">
         <view class="favorite-btn" :class="{ active: isFavorite }" @click="handleFavorite">
           <text class="favorite-icon">{{ isFavorite ? '❤️' : '🤍' }}</text>
-          <text class="favorite-text">收藏</text>
+          <text class="favorite-text">{{ isFavorite ? '已收藏' : '收藏' }}</text>
         </view>
       </view>
-      <button
-        class="apply-btn"
-        :class="applyBtnClass"
-        @click="handleApply"
-        :disabled="applyBtnDisabled"
-      >
-        <text>{{ applyBtnText }}</text>
-      </button>
+      <view class="bottom-right">
+        <button
+          class="apply-btn"
+          :class="applyBtnClass"
+          @click="handleApply"
+          :disabled="applyBtnDisabled"
+        >
+          <text>{{ applyBtnText }}</text>
+        </button>
+      </view>
     </view>
 
     <view v-if="showApplyAnimation" class="apply-animation">
@@ -155,7 +218,6 @@ const jobData = ref<JobDetail>({
   similar_jobs: []
 })
 
-const defaultCover = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20office%20workplace%20background%20professional%20clean&image_size=landscape_16_9'
 const descExpanded = ref(false)
 const isFavorite = ref(false)
 const showApplyAnimation = ref(false)
@@ -206,6 +268,10 @@ const toggleDescription = () => {
   descExpanded.value = !descExpanded.value
 }
 
+const handleCompanyClick = () => {
+  uni.showToast({ title: '企业主页开发中', icon: 'none' })
+}
+
 const handleMapNavigation = () => {
   if (jobData.value.latitude && jobData.value.longitude) {
     uni.openLocation({
@@ -218,7 +284,7 @@ const handleMapNavigation = () => {
 }
 
 const handleSimilarJobClick = (item: { job_id: string }) => {
-  uni.navigateTo({ url: `/pages/student/job-detail/index?job_id=${item.job_id}` })
+  uni.redirectTo({ url: `/pages/student/job-detail/index?job_id=${item.job_id}` })
 }
 
 const handleFavorite = () => {
@@ -337,8 +403,8 @@ onMounted(() => {
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background-color: #F2F3F5;
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  background-color: #f5f5f5;
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .loading-mask {
@@ -347,201 +413,267 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
 }
 
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #e8f0ff;
+  border-top-color: #165dff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .loading-text {
-  font-size: 30rpx;
-  color: #86909C;
+  font-size: 28rpx;
+  color: #86909c;
 }
 
-.header-image {
+.header-section {
   position: relative;
-  height: 320rpx;
-  overflow: hidden;
+  padding-bottom: 32rpx;
 }
 
-.header-img {
-  width: 100%;
-  height: 100%;
-}
-
-.header-overlay {
+.header-bg {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  padding: 32rpx;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  height: 400rpx;
+  background: linear-gradient(135deg, #165dff 0%, #4080ff 50%, #69b1ff 100%);
+  border-radius: 0 0 48rpx 48rpx;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+  padding: 60rpx 32rpx 0;
+}
+
+.job-title-row {
+  margin-bottom: 16rpx;
 }
 
 .job-name {
-  font-size: 36rpx;
+  font-size: 42rpx;
   font-weight: bold;
-  color: #FFFFFF;
-  display: block;
-  margin-bottom: 8rpx;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.job-salary-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 32rpx;
 }
 
 .job-salary {
-  font-size: 40rpx;
+  font-size: 64rpx;
   font-weight: bold;
-  color: #FF7D00;
+  color: #ffd666;
+  line-height: 1;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
-.company-info-row {
+.salary-unit {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-left: 8rpx;
+}
+
+.company-row {
   display: flex;
   align-items: center;
-  background-color: #FFFFFF;
-  padding: 24rpx 32rpx;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
 }
 
 .company-name {
-  font-size: 30rpx;
-  font-weight: bold;
-  color: #1F2329;
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .certified-tag {
-  font-size: 22rpx;
-  color: #165DFF;
-  background-color: #E8F0FF;
-  padding: 6rpx 16rpx;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 6rpx 14rpx;
   border-radius: 8rpx;
-  margin-left: 16rpx;
+}
+
+.certified-icon {
+  font-size: 18rpx;
+  color: #ffffff;
+  margin-right: 6rpx;
+  font-weight: bold;
+}
+
+.certified-text {
+  font-size: 20rpx;
+  color: #ffffff;
 }
 
 .credit-badge {
   display: flex;
   align-items: center;
-  margin-left: auto;
-  padding: 8rpx 16rpx;
-  background-color: #FFF7E6;
-  border-radius: 24rpx;
+  background: rgba(255, 214, 102, 0.3);
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
 }
 
 .credit-icon {
-  font-size: 24rpx;
-  margin-right: 8rpx;
+  font-size: 20rpx;
+  margin-right: 6rpx;
 }
 
 .credit-text {
-  font-size: 24rpx;
-  color: #FF7D00;
+  font-size: 22rpx;
+  color: #ffd666;
+  font-weight: 500;
 }
 
-.info-card {
-  background-color: #FFFFFF;
-  margin: 24rpx;
-  border-radius: 16rpx;
-  padding: 0 32rpx;
+.info-row {
+  margin-bottom: 16rpx;
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  padding: 28rpx 0;
-  border-bottom: 1rpx solid #F2F3F5;
-}
-
-.info-item:last-child {
-  border-bottom: none;
 }
 
 .info-icon {
-  font-size: 32rpx;
-  margin-right: 16rpx;
+  font-size: 28rpx;
+  margin-right: 12rpx;
 }
 
-.info-label {
-  font-size: 28rpx;
-  color: #86909C;
-  width: 160rpx;
-}
-
-.info-value {
-  font-size: 28rpx;
-  color: #1F2329;
+.info-text {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.9);
   flex: 1;
 }
 
-.info-arrow {
-  font-size: 32rpx;
-  color: #C9CDD4;
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 24rpx;
 }
 
 .settlement-tag {
-  font-size: 24rpx;
-  padding: 8rpx 20rpx;
+  font-size: 22rpx;
+  padding: 8rpx 18rpx;
   border-radius: 8rpx;
+  font-weight: 500;
+}
+
+.settlement-tag.small {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
 }
 
 .settlement-tag.daily {
-  color: #FF7D00;
-  background-color: #FFF7E6;
+  color: #ff7d00;
+  background-color: #fff7e6;
 }
 
 .settlement-tag.weekly {
-  color: #165DFF;
-  background-color: #E8F0FF;
+  color: #165dff;
+  background-color: #e8f0ff;
 }
 
 .settlement-tag.monthly {
   color: #646a73;
-  background-color: #F2F3F5;
+  background-color: #f2f3f5;
 }
 
-.skills-item {
-  flex-wrap: wrap;
-}
-
-.skill-tags {
+.insurance-tag {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  flex: 1;
-}
-
-.skill-tag {
-  font-size: 24rpx;
-  color: #86909C;
-  background-color: #F2F3F5;
+  align-items: center;
+  background: linear-gradient(90deg, #f6ffed 0%, #d9f7be 100%);
   padding: 8rpx 16rpx;
   border-radius: 8rpx;
 }
 
-.section {
-  background-color: #FFFFFF;
-  margin: 24rpx;
+.insurance-tag-icon {
+  font-size: 20rpx;
+  margin-right: 6rpx;
+}
+
+.insurance-tag-text {
+  font-size: 22rpx;
+  color: #00b42a;
+  font-weight: 500;
+}
+
+.skill-tag {
+  font-size: 22rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  margin-top: -8rpx;
+}
+
+.card-section {
+  margin: 24rpx 32rpx;
+  background-color: #ffffff;
   border-radius: 16rpx;
-  padding: 32rpx;
+  padding: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24rpx;
 }
 
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #1F2329;
+  color: #1f2329;
+  position: relative;
+  padding-left: 20rpx;
 }
 
-.expand-btn {
-  font-size: 26rpx;
-  color: #165DFF;
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 28rpx;
+  background: linear-gradient(180deg, #165dff 0%, #4080ff 100%);
+  border-radius: 4rpx;
 }
 
 .description-content {
   font-size: 28rpx;
-  color: #4E5969;
+  color: #4e5969;
   line-height: 1.8;
   max-height: 240rpx;
   overflow: hidden;
@@ -551,61 +683,169 @@ onMounted(() => {
   max-height: none;
 }
 
-.safety-card {
+.expand-wrap {
   display: flex;
-  align-items: flex-start;
-  margin: 24rpx;
+  align-items: center;
+  justify-content: center;
+  padding-top: 20rpx;
+  margin-top: 20rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.expand-btn {
+  font-size: 26rpx;
+  color: #165dff;
+  margin-right: 8rpx;
+}
+
+.expand-arrow {
+  font-size: 24rpx;
+  color: #165dff;
+}
+
+.company-card {
+  display: flex;
+  align-items: center;
   padding: 28rpx;
-  background-color: #FFFFFF;
+}
+
+.company-logo {
+  width: 96rpx;
+  height: 96rpx;
+  background: linear-gradient(135deg, #e8f0ff 0%, #d6e4ff 100%);
   border-radius: 16rpx;
-  border: 2rpx solid #D9F7BE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  font-size: 48rpx;
+}
+
+.company-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.company-name-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.company-name-text {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #1f2329;
+  margin-right: 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.certified-badge {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, #e8f0ff 0%, #f0f4ff 100%);
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+}
+
+.badge-icon {
+  font-size: 16rpx;
+  color: #165dff;
+  margin-right: 4rpx;
+  font-weight: bold;
+}
+
+.badge-text {
+  font-size: 18rpx;
+  color: #165dff;
+}
+
+.company-desc {
+  font-size: 24rpx;
+  color: #86909c;
+}
+
+.company-arrow {
+  font-size: 40rpx;
+  color: #c9cdd4;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+
+.safety-section {
+  padding: 28rpx;
+}
+
+.safety-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.safety-item {
+  display: flex;
+  align-items: center;
 }
 
 .safety-icon-wrap {
   width: 72rpx;
   height: 72rpx;
-  background-color: #D9F7BE;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.safety-icon-wrap.blue {
+  background: linear-gradient(135deg, #e8f0ff 0%, #d6e4ff 100%);
+}
+
+.safety-icon-wrap.green {
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+}
+
+.safety-icon-wrap.gray {
+  background: linear-gradient(135deg, #f2f3f5 0%, #e5e6eb 100%);
+}
+
+.safety-icon-wrap.orange {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
 }
 
 .safety-icon {
   font-size: 36rpx;
 }
 
-.safety-content {
+.safety-item-info {
   flex: 1;
 }
 
-.safety-title {
-  font-size: 30rpx;
+.safety-item-title {
+  font-size: 28rpx;
   font-weight: bold;
-  color: #1F2329;
+  color: #1f2329;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 6rpx;
 }
 
-.safety-desc {
-  font-size: 26rpx;
-  color: #4E5969;
-  display: block;
-  margin-bottom: 8rpx;
-}
-
-.insurance-text {
+.safety-item-desc {
   font-size: 24rpx;
-  color: #00B42A;
-}
-
-.insurance-text.recommended {
-  color: #FF7D00;
+  color: #86909c;
 }
 
 .similar-scroll {
   white-space: nowrap;
+  margin: 0 -28rpx;
+  padding: 0 28rpx;
 }
 
 .similar-list {
@@ -614,45 +854,53 @@ onMounted(() => {
 }
 
 .similar-card {
-  width: 240rpx;
-  background-color: #F8F9FA;
-  border-radius: 12rpx;
-  padding: 20rpx;
+  width: 280rpx;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 16rpx;
+  padding: 24rpx;
   display: inline-block;
+  border: 1rpx solid #f2f3f5;
+  vertical-align: top;
 }
 
 .similar-name {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: bold;
-  color: #1F2329;
+  color: #1f2329;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .similar-salary {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: bold;
-  color: #FF7D00;
+  color: #ff7d00;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .similar-company {
-  font-size: 22rpx;
-  color: #86909C;
+  font-size: 24rpx;
+  color: #86909c;
   display: block;
-  margin-bottom: 8rpx;
+  margin-bottom: 16rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.similar-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .similar-distance {
   font-size: 22rpx;
-  color: #BBBFc4;
+  color: #bbbfc4;
 }
 
 .bottom-bar {
@@ -662,51 +910,66 @@ onMounted(() => {
   right: 0;
   display: flex;
   align-items: center;
-  background-color: #FFFFFF;
-  padding: 20rpx 32rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
 }
 
 .bottom-left {
-  padding-right: 24rpx;
+  padding-right: 32rpx;
+  border-right: 1rpx solid #f2f3f5;
 }
 
 .favorite-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8rpx 32rpx;
+  padding: 8rpx 24rpx;
 }
 
 .favorite-icon {
-  font-size: 40rpx;
+  font-size: 44rpx;
   margin-bottom: 4rpx;
 }
 
 .favorite-text {
   font-size: 22rpx;
-  color: #86909C;
+  color: #86909c;
+}
+
+.favorite-btn.active .favorite-text {
+  color: #ff4d4f;
+}
+
+.bottom-right {
+  flex: 1;
+  padding-left: 32rpx;
 }
 
 .apply-btn {
-  flex: 1;
-  font-size: 30rpx;
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  font-size: 32rpx;
   font-weight: bold;
-  color: #FFFFFF;
-  background-color: #165DFF;
-  padding: 24rpx;
-  border-radius: 48rpx;
+  color: #ffffff;
+  background: linear-gradient(90deg, #165dff 0%, #4080ff 100%);
+  border-radius: 44rpx;
   border: none;
+  box-shadow: 0 8rpx 24rpx rgba(22, 93, 255, 0.3);
 }
 
 .apply-btn.disabled {
-  background-color: #C9CDD4;
-  color: #FFFFFF;
+  background: linear-gradient(90deg, #c9cdd4 0%, #e5e6eb 100%);
+  color: #ffffff;
+  box-shadow: none;
 }
 
 .apply-btn.progress {
-  background-color: #00B42A;
+  background: linear-gradient(90deg, #00b42a 0%, #23c343 100%);
+  box-shadow: 0 8rpx 24rpx rgba(0, 180, 42, 0.3);
 }
 
 .apply-animation {
@@ -733,7 +996,7 @@ onMounted(() => {
 
 .animation-text {
   font-size: 32rpx;
-  color: #FFFFFF;
+  color: #ffffff;
   margin-top: 24rpx;
 }
 

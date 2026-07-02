@@ -1,10 +1,9 @@
 <script setup lang="ts">
-<<<<<<< HEAD
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import JobCard from '@/components/JobCard.vue'
-import { mockJobList, type JobItem } from '@/api/job'
+import { mockJobList, type JobItem, getJobDetail, getSimilarJobs, applyJob, toggleFavorite as toggleFavoriteApi, checkFavorite, checkApplyStatus } from '@/api/job'
 import { useUserStore } from '@/stores/user'
 import { showToast, showConfirmDialog } from 'vant'
 
@@ -34,32 +33,96 @@ function getSettlementType(type: number) {
 async function loadJobDetail() {
   try {
     loading.value = true
-    const job = mockJobList.find((j) => j.job_id === jobId.value) || mockJobList[0]
-    jobDetail.value = job
+    const res = await getJobDetail(jobId.value)
+    if (res.code === 200) {
+      jobDetail.value = res.data
+    } else {
+      throw new Error(res.message || '加载失败')
+    }
   } catch (error) {
     console.error('加载岗位详情失败:', error)
+    const job = mockJobList.find((j) => j.job_id === jobId.value) || mockJobList[0]
+    jobDetail.value = job
   } finally {
     loading.value = false
+    if (userStore.isLoggedIn) {
+      await loadFavoriteStatus()
+      await loadApplyStatus()
+    }
+  }
+}
+
+async function loadFavoriteStatus() {
+  try {
+    const res = await checkFavorite(jobId.value)
+    if (res.code === 200) {
+      isFavorite.value = res.data
+    }
+  } catch (error) {
+    console.error('加载收藏状态失败:', error)
+  }
+}
+
+async function loadApplyStatus() {
+  try {
+    const res = await checkApplyStatus(jobId.value)
+    if (res.code === 200) {
+      applyStatus.value = res.data ? 'applied' : 'normal'
+    }
+  } catch (error) {
+    console.error('加载投递状态失败:', error)
   }
 }
 
 async function loadSimilarJobs() {
   try {
-    similarJobs.value = mockJobList.filter((j) => j.job_id !== jobId.value).slice(0, 3)
+    const res = await getSimilarJobs(jobId.value, 3)
+    if (res.code === 200) {
+      similarJobs.value = res.data
+    } else {
+      throw new Error(res.message || '加载失败')
+    }
   } catch (error) {
     console.error('加载相似岗位失败:', error)
+    similarJobs.value = mockJobList.filter((j) => j.job_id !== jobId.value).slice(0, 3)
   }
 }
 
-function toggleFavorite() {
-  isFavorite.value = !isFavorite.value
-  showToast({
-    message: isFavorite.value ? '收藏成功' : '已取消收藏',
-    duration: 1500,
-  })
+async function toggleFavorite() {
+  if (!userStore.isLoggedIn) {
+    showConfirmDialog({
+      title: '提示',
+      message: '请先登录后再收藏',
+    }).then(() => {
+      router.push('/login')
+    }).catch(() => {})
+    return
+  }
+
+  try {
+    const res = await toggleFavoriteApi(jobId.value)
+    if (res.code === 200) {
+      isFavorite.value = res.data
+      if (isFavorite.value) {
+        userStore.incrementFavorite()
+      } else {
+        userStore.decrementFavorite()
+      }
+      showToast({
+        message: isFavorite.value ? '收藏成功' : '已取消收藏',
+        duration: 1500,
+      })
+    }
+  } catch (error) {
+    console.error('收藏失败:', error)
+    showToast({
+      message: '操作失败',
+      type: 'fail',
+    })
+  }
 }
 
-function handleApply() {
+async function handleApply() {
   if (applyStatus.value === 'applied' || applyStatus.value === 'applying') {
     return
   }
@@ -76,26 +139,66 @@ function handleApply() {
 
   applyStatus.value = 'applying'
 
-  setTimeout(() => {
-    applyStatus.value = 'success'
-    showApplySuccess.value = true
+  try {
+    const res = await applyJob(jobId.value)
+    if (res.code === 200) {
+      applyStatus.value = 'success'
+      showApplySuccess.value = true
+      userStore.incrementPending()
 
-    setTimeout(() => {
-      showApplySuccess.value = false
-      applyStatus.value = 'applied'
-    }, 2000)
-  }, 800)
+      setTimeout(() => {
+        showApplySuccess.value = false
+        applyStatus.value = 'applied'
+      }, 2000)
+    } else {
+      throw new Error(res.message || '投递失败')
+    }
+  } catch (error: any) {
+    applyStatus.value = 'normal'
+    showToast({
+      message: error?.message || '投递失败',
+      type: 'fail',
+    })
+  }
+}
+
+function handleReport() {
+  if (!userStore.isLoggedIn) {
+    showConfirmDialog({
+      title: '提示',
+      message: '请先登录后再举报',
+    }).then(() => {
+      router.push('/login')
+    }).catch(() => {})
+    return
+  }
+  router.push({
+    path: '/complaint/create',
+    query: {
+      job_id: jobId.value,
+      job_title: jobDetail.value?.job_title || '',
+      enterprise_name: jobDetail.value?.enterprise_info?.enterprise_name || '',
+    },
+  })
 }
 
 onMounted(() => {
   loadJobDetail()
   loadSimilarJobs()
 })
+
+// 监听路由参数变化，重新加载岗位详情
+watch(jobId, (newId, oldId) => {
+  if (newId !== oldId) {
+    loadJobDetail()
+    loadSimilarJobs()
+  }
+})
 </script>
 
 <template>
   <div class="job-detail-page">
-    <NavBar title="岗位详情" show-back />
+    <NavBar title="岗位详情" show-back right-text="举报" @right-click="handleReport" />
 
     <div v-if="jobDetail && !loading" class="detail-content">
       <div class="job-header">
@@ -198,6 +301,10 @@ onMounted(() => {
           {{ isFavorite ? '⭐' : '☆' }}
         </span>
         <span class="action-text">收藏</span>
+      </div>
+      <div class="action-left" @click="handleReport">
+        <span class="action-icon">⚠️</span>
+        <span class="action-text">举报</span>
       </div>
       <button
         class="apply-btn"
@@ -698,34 +805,3 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 </style>
-=======
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const jobId = route.params.id
-</script>
-
-<template>
-  <div class="job-detail">
-    <h2>岗位详情 - {{ jobId }}</h2>
-    <div class="detail-content">岗位详情内容占位</div>
-  </div>
-</template>
-
-<style scoped>
-.job-detail {
-  padding: 16px;
-}
-
-.job-detail h2 {
-  margin-bottom: 16px;
-  color: #4E5969;
-}
-
-.detail-content {
-  background-color: #FFFFFF;
-  padding: 12px;
-  border-radius: 8px;
-}
-</style>
->>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc

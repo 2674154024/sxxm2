@@ -14,10 +14,15 @@ import com.parttime.job.dto.request.JobAuditRequest;
 import com.parttime.job.dto.request.JobPublishRequest;
 import com.parttime.job.dto.request.JobSearchRequest;
 import com.parttime.job.dto.request.JobUpdateRequest;
+import com.parttime.job.dto.response.ApplyListResponse;
 import com.parttime.job.dto.response.JobDetailResponse;
 import com.parttime.job.dto.response.JobListResponse;
 import com.parttime.job.dto.response.PageResponse;
+import com.parttime.common.entity.JobApplyEntity;
 import com.parttime.job.entity.JobEntity;
+import com.parttime.job.entity.JobFavoriteEntity;
+import com.parttime.job.mapper.JobApplyMapper;
+import com.parttime.job.mapper.JobFavoriteMapper;
 import com.parttime.job.mapper.JobMapper;
 import com.parttime.job.service.JobService;
 import com.parttime.common.util.DesensitizeUtil;
@@ -55,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 public class JobServiceImpl implements JobService {
 
     private final JobMapper jobMapper;
+    private final JobApplyMapper jobApplyMapper;
+    private final JobFavoriteMapper jobFavoriteMapper;
     private final RestHighLevelClient esClient;
     private final StringRedisTemplate redisTemplate;
 
@@ -75,10 +82,7 @@ public class JobServiceImpl implements JobService {
             throw new BusinessException(422, "时薪不低于长沙最低时薪(" + minHourlyWage + "元)");
         }
 
-        boolean containsSensitive = SensitiveWordFilter.containsSensitiveWord(request.getJobTitle())
-                || SensitiveWordFilter.containsSensitiveWord(request.getSkillRequire());
-
-        int status = containsSensitive ? 0 : 1;
+        int status = 0;
 
         String jobId = UUID.randomUUID().toString();
 
@@ -109,11 +113,7 @@ public class JobServiceImpl implements JobService {
 
         jobMapper.insert(job);
 
-        if (status == 1) {
-            indexToEs(job);
-        }
-
-        log.info("岗位发布成功: jobId={}, status={}", jobId, status);
+        log.info("岗位发布成功，等待审核: jobId={}", jobId);
     }
 
     @Override
@@ -170,15 +170,18 @@ public class JobServiceImpl implements JobService {
             job.setIsInsured(request.getIsInsured());
         }
 
+        int oldStatus = job.getStatus();
+        job.setStatus(0);
+
         job.setUpdatedAt(LocalDateTime.now());
 
         jobMapper.updateById(job);
 
-        if (job.getStatus() == 1) {
-            indexToEs(job);
+        if (oldStatus == 1) {
+            deleteFromEs(request.getJobId());
         }
 
-        log.info("岗位更新成功: jobId={}", request.getJobId());
+        log.info("岗位更新成功，进入审核流程: jobId={}", request.getJobId());
     }
 
     @Override
@@ -206,9 +209,12 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public PageResponse<JobListResponse> getMyJobList(String enterpriseId, Integer page, Integer size) {
+    public PageResponse<JobListResponse> getMyJobList(String enterpriseId, Integer status, Integer page, Integer size) {
         LambdaQueryWrapper<JobEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(JobEntity::getEnterpriseId, enterpriseId);
+        if (status != null) {
+            wrapper.eq(JobEntity::getStatus, status);
+        }
         wrapper.orderByDesc(JobEntity::getCreatedAt);
 
         Page<JobEntity> pageRequest = new Page<>(page, size);
@@ -252,6 +258,28 @@ public class JobServiceImpl implements JobService {
         incrementViewCount(jobId);
 
         return convertToDetailResponse(job);
+    }
+
+    @Override
+    public List<JobListResponse> getSimilarJobs(String jobId, Integer limit) {
+        JobEntity currentJob = jobMapper.selectById(jobId);
+        if (currentJob == null) {
+            return new ArrayList<>();
+        }
+
+        LambdaQueryWrapper<JobEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(JobEntity::getId, jobId);
+        wrapper.eq(JobEntity::getStatus, 1);
+        if (currentJob.getIndustryTag() != null) {
+            wrapper.eq(JobEntity::getIndustryTag, currentJob.getIndustryTag());
+        }
+        wrapper.orderByDesc(JobEntity::getCreatedAt);
+        wrapper.last("LIMIT " + limit);
+
+        List<JobEntity> jobs = jobMapper.selectList(wrapper);
+        return jobs.stream()
+                .map(this::convertToListResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -353,6 +381,12 @@ public class JobServiceImpl implements JobService {
                 boolQuery.should(matchQuery);
                 boolQuery.minimumShouldMatch(1);
             }
+            if (request.getIsInsured() != null && request.getIsInsured() == 1) {
+                boolQuery.filter(QueryBuilders.termQuery("is_insured", 1));
+            }
+            if (request.getWorkTime() != null && !request.getWorkTime().isEmpty()) {
+                boolQuery.filter(QueryBuilders.termQuery("work_time", request.getWorkTime()));
+            }
 
             sourceBuilder.query(boolQuery);
 
@@ -385,7 +419,6 @@ public class JobServiceImpl implements JobService {
                         .workAddress(source.getString("work_address"))
                         .longitude(source.getBigDecimal("longitude"))
                         .latitude(source.getBigDecimal("latitude"))
-                        .status(source.getIntValue("status"))
                         .isInsured(source.getIntValue("is_insured"))
                         .viewCount(source.getIntValue("view_count"))
                         .enterpriseName(source.getString("enterprise_name"))
@@ -424,6 +457,12 @@ public class JobServiceImpl implements JobService {
         }
         if (request.getIndustryTag() != null) {
             wrapper.eq(JobEntity::getIndustryTag, request.getIndustryTag());
+        }
+        if (request.getIsInsured() != null && request.getIsInsured() == 1) {
+            wrapper.eq(JobEntity::getIsInsured, 1);
+        }
+        if (request.getWorkTime() != null && !request.getWorkTime().isEmpty()) {
+            wrapper.apply("JSON_CONTAINS(work_time, JSON_OBJECT('day', {0}))", request.getWorkTime());
         }
 
         Page<JobEntity> pageRequest = new Page<>(request.getPage(), request.getSize());
@@ -501,18 +540,71 @@ public class JobServiceImpl implements JobService {
                 .jobType(job.getJobType())
                 .industryTag(job.getIndustryTag())
                 .salaryType(job.getSalaryType())
+                .salaryTypeStr(convertSalaryType(job.getSalaryType()))
                 .salaryAmount(job.getSalaryAmount())
                 .settlementType(job.getSettlementType())
+                .settlementTypeStr(convertSettlementType(job.getSettlementType()))
                 .workAddress(job.getWorkAddress())
                 .longitude(job.getLongitude())
                 .latitude(job.getLatitude())
-                .status(job.getStatus())
+                .statusStr(convertStatus(job.getStatus()))
                 .isInsured(job.getIsInsured())
+                .hasInsurance(job.getIsInsured() != null && job.getIsInsured() == 1)
                 .viewCount(job.getViewCount())
                 .enterpriseName(mockGetEnterpriseName(job.getEnterpriseId()))
                 .enterpriseCreditScore(mockGetEnterpriseCreditScore(job.getEnterpriseId()))
-                .createdAt(job.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .isCertified(mockIsEnterpriseCertified(job.getEnterpriseId()))
+                .skillTags(List.of())
+                .distance(null)
+                .createdAt(job.getCreatedAt() != null ? job.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : "")
                 .build();
+    }
+
+    private String convertStatus(Integer status) {
+        if (status == null) return "pending";
+        return switch (status) {
+            case 0 -> "pending";
+            case 1 -> "approved";
+            case 2 -> "rejected";
+            case 3 -> "offline";
+            default -> "pending";
+        };
+    }
+
+    private String convertSalaryType(Integer type) {
+        if (type == null) return "hourly";
+        return switch (type) {
+            case 1 -> "hourly";
+            case 2 -> "daily";
+            case 3 -> "monthly";
+            default -> "hourly";
+        };
+    }
+
+    private String convertSettlementType(Integer type) {
+        if (type == null) return "daily";
+        return switch (type) {
+            case 1 -> "daily";
+            case 2 -> "weekly";
+            case 3 -> "monthly";
+            default -> "daily";
+        };
+    }
+
+    private Boolean mockIsEnterpriseCertified(String enterpriseId) {
+        return true;
+    }
+
+    private List<String> parseSkillTags(String skillRequire) {
+        if (skillRequire == null || skillRequire.isEmpty()) {
+            return List.of();
+        }
+        try {
+            JSONObject json = JSON.parseObject(skillRequire);
+            return json.getJSONArray("tags").toJavaList(String.class);
+        } catch (Exception e) {
+            return List.of(skillRequire);
+        }
     }
 
     private JobDetailResponse convertToDetailResponse(JobEntity job) {
@@ -566,6 +658,246 @@ public class JobServiceImpl implements JobService {
     }
 
     private String mockGetEnterpriseContactPhone(String enterpriseId) {
-        return AesUtil.decrypt("encrypted_phone");
+        return "13800138000";
+    }
+
+    @Override
+    @Transactional
+    @AuditLog(module = "岗位投递", action = "投递岗位")
+    public String applyJob(String studentId, String jobId) {
+        JobEntity job = jobMapper.selectById(jobId);
+        if (job == null) {
+            throw new BusinessException("岗位不存在");
+        }
+        if (job.getStatus() != 1) {
+            throw new BusinessException("岗位不可投递");
+        }
+
+        int existingCount = jobApplyMapper.countByStudentAndJob(studentId, jobId);
+        if (existingCount > 0) {
+            throw new BusinessException("您已投递过该岗位");
+        }
+
+        String applyId = "apply-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+        JobApplyEntity apply = JobApplyEntity.builder()
+                .id(applyId)
+                .studentId(studentId)
+                .jobId(jobId)
+                .applyStatus(0)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        jobApplyMapper.insert(apply);
+
+        incrementApplyCount(jobId);
+
+        return applyId;
+    }
+
+    @Override
+    @AuditLog(module = "岗位投递", action = "查询投递记录")
+    public PageResponse<ApplyListResponse> getApplyList(String studentId, Integer status, Integer page, Integer size) {
+        LambdaQueryWrapper<JobApplyEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(JobApplyEntity::getStudentId, studentId);
+        if (status != null) {
+            wrapper.eq(JobApplyEntity::getApplyStatus, status);
+        }
+        wrapper.orderByDesc(JobApplyEntity::getCreatedAt);
+
+        Page<JobApplyEntity> pageRequest = new Page<>(page, size);
+        IPage<JobApplyEntity> result = jobApplyMapper.selectPage(pageRequest, wrapper);
+
+        List<ApplyListResponse> list = new ArrayList<>();
+        for (JobApplyEntity apply : result.getRecords()) {
+            JobEntity job = jobMapper.selectById(apply.getJobId());
+            if (job != null) {
+                list.add(ApplyListResponse.builder()
+                        .applyId(apply.getId())
+                        .jobId(job.getId())
+                        .jobTitle(job.getJobTitle())
+                        .jobType(job.getJobType())
+                        .salaryAmount(job.getSalaryAmount())
+                        .settlementType(job.getSettlementType())
+                        .workAddress(job.getWorkAddress())
+                        .enterpriseName(mockGetEnterpriseName(job.getEnterpriseId()))
+                        .applyStatus(apply.getApplyStatus())
+                        .interviewTime(apply.getInterviewTime())
+                        .interviewType(apply.getInterviewType())
+                        .createdAt(apply.getCreatedAt())
+                        .build());
+            }
+        }
+
+        PageResponse<ApplyListResponse> response = new PageResponse<>();
+        response.setList(list);
+        response.setTotal(result.getTotal());
+        response.setPage(page);
+        response.setSize(size);
+        response.setPages((int) Math.ceil((double) result.getTotal() / size));
+        return response;
+    }
+
+    @Override
+    @AuditLog(module = "岗位投递", action = "企业查询投递记录")
+    public PageResponse<ApplyListResponse> getEnterpriseApplyList(String enterpriseId, Integer status, Integer page, Integer size) {
+        LambdaQueryWrapper<JobEntity> jobWrapper = new LambdaQueryWrapper<>();
+        jobWrapper.eq(JobEntity::getEnterpriseId, enterpriseId);
+        List<JobEntity> enterpriseJobs = jobMapper.selectList(jobWrapper);
+        
+        if (enterpriseJobs.isEmpty()) {
+            PageResponse<ApplyListResponse> response = new PageResponse<>();
+            response.setList(new ArrayList<>());
+            response.setTotal(0L);
+            response.setPage(page);
+            response.setSize(size);
+            response.setPages(0);
+            return response;
+        }
+
+        List<String> jobIds = enterpriseJobs.stream()
+                .map(JobEntity::getId)
+                .collect(java.util.stream.Collectors.toList());
+
+        LambdaQueryWrapper<JobApplyEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(JobApplyEntity::getJobId, jobIds);
+        if (status != null) {
+            wrapper.eq(JobApplyEntity::getApplyStatus, status);
+        }
+        wrapper.orderByDesc(JobApplyEntity::getCreatedAt);
+
+        Page<JobApplyEntity> pageRequest = new Page<>(page, size);
+        IPage<JobApplyEntity> result = jobApplyMapper.selectPage(pageRequest, wrapper);
+
+        List<ApplyListResponse> list = new ArrayList<>();
+        for (JobApplyEntity apply : result.getRecords()) {
+            JobEntity job = jobMapper.selectById(apply.getJobId());
+            if (job != null) {
+                String statusStr = "pending";
+                if (apply.getApplyStatus() != null) {
+                    switch (apply.getApplyStatus()) {
+                        case 0: statusStr = "pending"; break;
+                        case 1: statusStr = "interview"; break;
+                        case 2: statusStr = "hired"; break;
+                        case 3: statusStr = "rejected"; break;
+                        default: statusStr = "pending";
+                    }
+                }
+                
+                String applyTimeStr = apply.getCreatedAt() != null 
+                    ? apply.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) 
+                    : "";
+                
+                list.add(ApplyListResponse.builder()
+                        .applyId(apply.getId())
+                        .jobId(job.getId())
+                        .jobTitle(job.getJobTitle())
+                        .jobType(job.getJobType())
+                        .salaryAmount(job.getSalaryAmount())
+                        .settlementType(job.getSettlementType())
+                        .workAddress(job.getWorkAddress())
+                        .enterpriseName(mockGetEnterpriseName(job.getEnterpriseId()))
+                        .applyStatus(apply.getApplyStatus())
+                        .interviewTime(apply.getInterviewTime())
+                        .interviewType(apply.getInterviewType())
+                        .createdAt(apply.getCreatedAt())
+                        .statusStr(statusStr)
+                        .applyTime(applyTimeStr)
+                        .build());
+            }
+        }
+
+        PageResponse<ApplyListResponse> response = new PageResponse<>();
+        response.setList(list);
+        response.setTotal(result.getTotal());
+        response.setPage(page);
+        response.setSize(size);
+        response.setPages((int) Math.ceil((double) result.getTotal() / size));
+        return response;
+    }
+
+    @Override
+    @Transactional
+    @AuditLog(module = "岗位投递", action = "取消投递")
+    public void cancelApply(String studentId, String applyId) {
+        JobApplyEntity apply = jobApplyMapper.selectById(applyId);
+        if (apply == null) {
+            throw new BusinessException("投递记录不存在");
+        }
+        if (!apply.getStudentId().equals(studentId)) {
+            throw new BusinessException(403, "无权取消此投递");
+        }
+        if (apply.getApplyStatus() != 0) {
+            throw new BusinessException("只能取消待审核的投递");
+        }
+        
+        LambdaQueryWrapper<JobApplyEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(JobApplyEntity::getId, applyId);
+        wrapper.eq(JobApplyEntity::getStudentId, studentId);
+        jobApplyMapper.delete(wrapper);
+        
+        log.info("取消投递: applyId={}, studentId={}", applyId, studentId);
+    }
+
+    @Override
+    public Boolean isApplied(String studentId, String jobId) {
+        int count = jobApplyMapper.countByStudentAndJob(studentId, jobId);
+        return count > 0;
+    }
+
+    @Override
+    @Transactional
+    @AuditLog(module = "岗位收藏", action = "切换收藏状态")
+    public Boolean toggleFavorite(String studentId, String jobId) {
+        int count = jobFavoriteMapper.countByStudentAndJob(studentId, jobId);
+        if (count > 0) {
+            LambdaQueryWrapper<JobFavoriteEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(JobFavoriteEntity::getStudentId, studentId);
+            wrapper.eq(JobFavoriteEntity::getJobId, jobId);
+            jobFavoriteMapper.delete(wrapper);
+            return false;
+        } else {
+            String favoriteId = "fav-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+            JobFavoriteEntity favorite = JobFavoriteEntity.builder()
+                    .id(favoriteId)
+                    .studentId(studentId)
+                    .jobId(jobId)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            jobFavoriteMapper.insert(favorite);
+            return true;
+        }
+    }
+
+    @Override
+    public Boolean isFavorite(String studentId, String jobId) {
+        int count = jobFavoriteMapper.countByStudentAndJob(studentId, jobId);
+        return count > 0;
+    }
+
+    @Override
+    @AuditLog(module = "岗位收藏", action = "查询收藏列表")
+    public PageResponse<JobListResponse> getFavoriteList(String studentId, Integer page, Integer size) {
+        LambdaQueryWrapper<JobFavoriteEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(JobFavoriteEntity::getStudentId, studentId);
+        wrapper.orderByDesc(JobFavoriteEntity::getCreatedAt);
+
+        Page<JobFavoriteEntity> pageRequest = new Page<>(page, size);
+        IPage<JobFavoriteEntity> result = jobFavoriteMapper.selectPage(pageRequest, wrapper);
+
+        List<JobListResponse> list = new ArrayList<>();
+        for (JobFavoriteEntity favorite : result.getRecords()) {
+            JobEntity job = jobMapper.selectById(favorite.getJobId());
+            if (job != null) {
+                list.add(convertToListResponse(job));
+            }
+        }
+
+        PageResponse<JobListResponse> response = new PageResponse<>();
+        response.setList(list);
+        response.setTotal(result.getTotal());
+        response.setPage(page);
+        response.setSize(size);
+        response.setPages((int) Math.ceil((double) result.getTotal() / size));
+        return response;
     }
 }

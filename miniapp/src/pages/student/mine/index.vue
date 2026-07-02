@@ -1,75 +1,138 @@
 <template>
   <view class="page">
-    <view class="user-header">
-      <view class="user-info">
-        <view class="avatar" :style="{ background: avatarColor }">
-          <text class="avatar-text">{{ user.real_name ? user.real_name.charAt(0) : '?' }}</text>
+    <view class="header-bg">
+      <view class="user-header">
+        <view class="user-info">
+          <view class="avatar" :style="{ background: avatarColor }">
+            <text class="avatar-text">{{ user.real_name ? user.real_name.charAt(0) : '?' }}</text>
+          </view>
+          <view class="user-detail">
+            <view class="name-row">
+              <text class="user-name">{{ user.real_name || '未登录' }}</text>
+              <view class="credit-badge" v-if="isLogin">
+                <text class="credit-icon">⭐</text>
+                <text class="credit-text">{{ creditScore }}分</text>
+              </view>
+            </view>
+            <text class="user-school" v-if="isLogin">{{ user.school || '湖南大学' }} · {{ user.major || '计算机科学与技术' }}</text>
+            <text class="user-tip" v-else>点击登录享受更多服务</text>
+          </view>
         </view>
-        <view class="user-detail">
-          <text class="user-name">{{ user.real_name || '未登录' }}</text>
-          <text class="user-phone">{{ user.phone || '点击登录' }}</text>
+        <view class="edit-btn" @click="handleEditProfile" v-if="isLogin">
+          <text class="edit-icon">✏️</text>
         </view>
       </view>
-      <view class="verify-badge" :class="verifyClass">
-        <text class="verify-text">{{ verifyText }}</text>
+
+      <view class="stats-card" v-if="isLogin">
+        <view class="stat-item" @click="navigateTo('/pages/student/apply/list')">
+          <text class="stat-num">{{ stats.applyCount }}</text>
+          <text class="stat-label">投递数</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" @click="handleFavorite">
+          <text class="stat-num">{{ stats.favoriteCount }}</text>
+          <text class="stat-label">收藏数</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item" @click="navigateTo('/pages/student/im/conversation')">
+          <text class="stat-num">{{ stats.chatCount }}</text>
+          <text class="stat-label">沟通数</text>
+        </view>
       </view>
     </view>
 
-    <view class="credit-section" v-if="isLogin">
-      <view class="credit-card">
-        <view class="credit-info">
-          <text class="credit-label">信用分</text>
-          <text class="credit-score">{{ creditScore }}</text>
+    <view class="menu-section">
+      <view class="section-title">
+        <text class="title-text">我的服务</text>
+      </view>
+      
+      <view class="menu-list">
+        <view class="menu-item" @click="navigateTo('/pages/student/resume/edit')">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">📝</text>
+            </view>
+            <text class="menu-title">我的简历</text>
+          </view>
+          <text class="menu-arrow">›</text>
         </view>
-        <view class="credit-bar">
-          <view class="credit-progress" :style="{ width: creditPercent + '%', background: creditColor }"></view>
+
+        <view class="menu-item" @click="navigateTo('/pages/student/salary/index')">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">💰</text>
+            </view>
+            <text class="menu-title">薪资流水</text>
+          </view>
+          <text class="menu-arrow">›</text>
         </view>
-        <text class="credit-tip">{{ creditTip }}</text>
+
+        <view class="menu-item" @click="navigateTo('/pages/student/clock/index')">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">⏰</text>
+            </view>
+            <text class="menu-title">打卡记录</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+
+        <view class="menu-item" @click="handleFavorite">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">❤️</text>
+            </view>
+            <text class="menu-title">我的收藏</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
       </view>
     </view>
 
-    <view class="menu-grid">
-      <view class="grid-item" @click="navigateTo('/pages/student/resume/edit')">
-        <view class="grid-icon">📝</view>
-        <text class="grid-text">我的简历</text>
+    <view class="menu-section">
+      <view class="section-title">
+        <text class="title-text">其他</text>
       </view>
-      <view class="grid-item" @click="navigateTo('/pages/student/apply/list')">
-        <view class="grid-icon">📋</view>
-        <text class="grid-text">投递记录</text>
-      </view>
-      <view class="grid-item" @click="navigateTo('/pages/student/salary/index')">
-        <view class="grid-icon">💰</view>
-        <text class="grid-text">薪资流水</text>
-      </view>
-      <view class="grid-item" @click="handleAgreement">
-        <view class="grid-icon">📄</view>
-        <text class="grid-text">协议中心</text>
-      </view>
-      <view class="grid-item" @click="handleInsurance">
-        <view class="grid-icon">🛡️</view>
-        <text class="grid-text">保险记录</text>
-      </view>
-      <view class="grid-item" @click="handleReport">
-        <view class="grid-icon">📊</view>
-        <text class="grid-text">实践报告</text>
-      </view>
-      <view class="grid-item" @click="navigateTo('/pages/student/safety/index')">
-        <view class="grid-icon">🔒</view>
-        <text class="grid-text">安全中心</text>
-      </view>
-      <view class="grid-item" @click="navigateTo('/pages/student/complaint/create')">
-        <view class="grid-icon">⚠️</view>
-        <text class="grid-text">投诉记录</text>
-      </view>
-      <view class="grid-item" @click="handleSettings">
-        <view class="grid-icon">⚙️</view>
-        <text class="grid-text">设置</text>
+      
+      <view class="menu-list">
+        <view class="menu-item" @click="navigateTo('/pages/student/safety/index')">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">🔒</text>
+            </view>
+            <text class="menu-title">安全中心</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+
+        <view class="menu-item" @click="handleFeedback">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">💬</text>
+            </view>
+            <text class="menu-title">意见反馈</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
+
+        <view class="menu-item" @click="handleSettings">
+          <view class="menu-left">
+            <view class="menu-icon-wrap">
+              <text class="menu-icon">⚙️</text>
+            </view>
+            <text class="menu-title">设置</text>
+          </view>
+          <text class="menu-arrow">›</text>
+        </view>
       </view>
     </view>
 
-    <view class="logout-btn-wrap">
-      <button class="logout-btn" @click="handleLogout" v-if="isLogin">退出登录</button>
-      <button class="login-btn" @click="handleLogin" v-else>去登录</button>
+    <view class="logout-section" v-if="isLogin">
+      <button class="logout-btn" @click="handleLogout">退出登录</button>
+    </view>
+
+    <view class="login-section" v-else>
+      <button class="login-btn" @click="handleLogin">立即登录</button>
     </view>
   </view>
 </template>
@@ -84,6 +147,12 @@ const user = computed(() => userStore.user || {})
 const isLogin = computed(() => userStore.isLogin)
 const creditScore = ref(85)
 
+const stats = ref({
+  applyCount: 12,
+  favoriteCount: 8,
+  chatCount: 5
+})
+
 const avatarColor = computed(() => {
   const colors = ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a']
   if (user.value.real_name) {
@@ -94,51 +163,6 @@ const avatarColor = computed(() => {
     return colors[Math.abs(hash) % colors.length]
   }
   return '#86909C'
-})
-
-const verifyClass = computed(() => {
-  const status = user.value.verify_status || 0
-  switch (status) {
-    case 2:
-      return 'verified'
-    case 1:
-      return 'pending'
-    case 3:
-      return 'rejected'
-    default:
-      return 'unverified'
-  }
-})
-
-const verifyText = computed(() => {
-  const status = user.value.verify_status || 0
-  switch (status) {
-    case 2:
-      return '已认证'
-    case 1:
-      return '审核中'
-    case 3:
-      return '认证失败'
-    default:
-      return '未认证'
-  }
-})
-
-const creditPercent = computed(() => {
-  return Math.min((creditScore.value / 100) * 100, 100)
-})
-
-const creditColor = computed(() => {
-  if (creditScore.value >= 80) return '#52C41A'
-  if (creditScore.value >= 60) return '#FAAD14'
-  return '#FF4D4F'
-})
-
-const creditTip = computed(() => {
-  if (creditScore.value >= 90) return '信用优秀，享受优先推荐'
-  if (creditScore.value >= 80) return '信用良好，请继续保持'
-  if (creditScore.value >= 60) return '信用一般，注意履约'
-  return '信用较低，请注意提升'
 })
 
 const navigateTo = (url: string) => {
@@ -166,15 +190,15 @@ const handleLogout = () => {
   })
 }
 
-const handleAgreement = () => {
+const handleEditProfile = () => {
+  uni.navigateTo({ url: '/pages/student/resume/edit' })
+}
+
+const handleFavorite = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
-const handleInsurance = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-const handleReport = () => {
+const handleFeedback = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
@@ -188,186 +212,261 @@ const loadCreditScore = () => {
   }
 }
 
+const loadStats = () => {
+  if (isLogin.value) {
+    stats.value = {
+      applyCount: Math.floor(Math.random() * 20) + 5,
+      favoriteCount: Math.floor(Math.random() * 15) + 3,
+      chatCount: Math.floor(Math.random() * 10) + 1
+    }
+  }
+}
+
 onMounted(() => {
   loadCreditScore()
+  loadStats()
 })
 </script>
 
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  background-color: #F2F3F5;
+  background-color: #165DFF;
+  padding-bottom: 60rpx;
+}
+
+.header-bg {
+  background: #165DFF;
+  padding-bottom: 100rpx;
+  padding-top: env(safe-area-inset-top);
 }
 
 .user-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 48rpx 32rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 48rpx 32rpx 32rpx;
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  flex: 1;
 }
 
 .avatar {
-  width: 120rpx;
-  height: 120rpx;
+  width: 128rpx;
+  height: 128rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 24rpx;
+  margin-right: 28rpx;
   border: 4rpx solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
 }
 
 .avatar-text {
-  font-size: 48rpx;
+  font-size: 52rpx;
   color: #FFFFFF;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .user-detail {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12rpx;
 }
 
 .user-name {
   font-size: 36rpx;
-  font-weight: bold;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-right: 16rpx;
+}
+
+.credit-badge {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.credit-icon {
+  font-size: 24rpx;
+  margin-right: 6rpx;
+}
+
+.credit-text {
+  font-size: 22rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.user-school {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.user-tip {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.edit-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.edit-icon {
+  font-size: 28rpx;
+}
+
+.stats-card {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 32rpx;
+  margin-top: -20rpx;
+  border-radius: 16rpx;
+  padding: 32rpx 0;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-num {
+  font-size: 40rpx;
+  font-weight: 600;
   color: #FFFFFF;
   margin-bottom: 8rpx;
 }
 
-.user-phone {
-  font-size: 26rpx;
+.stat-label {
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.8);
 }
 
-.verify-badge {
-  font-size: 24rpx;
-  padding: 12rpx 24rpx;
-  border-radius: 32rpx;
+.stat-divider {
+  width: 1rpx;
+  height: 60rpx;
+  background-color: rgba(255, 255, 255, 0.3);
+  align-self: center;
 }
 
-.verify-badge.verified {
-  background-color: rgba(82, 196, 26, 0.2);
-  color: #52C41A;
+.menu-section {
+  margin-top: 32rpx;
+  padding: 0 32rpx;
 }
 
-.verify-badge.pending {
-  background-color: rgba(250, 173, 20, 0.2);
-  color: #FAAD14;
-}
-
-.verify-badge.rejected {
-  background-color: rgba(255, 77, 79, 0.2);
-  color: #FF4D4F;
-}
-
-.verify-badge.unverified {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
-}
-
-.credit-section {
-  padding: 0 24rpx;
-  margin-top: -40rpx;
-}
-
-.credit-card {
-  background-color: #FFFFFF;
-  border-radius: 20rpx;
-  padding: 32rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
-}
-
-.credit-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.section-title {
   margin-bottom: 16rpx;
 }
 
-.credit-label {
+.title-text {
   font-size: 28rpx;
-  color: #86909C;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
 }
 
-.credit-score {
-  font-size: 56rpx;
-  font-weight: bold;
-  color: #165DFF;
-}
-
-.credit-bar {
-  height: 12rpx;
-  background-color: #F2F3F5;
-  border-radius: 6rpx;
-  overflow: hidden;
-  margin-bottom: 12rpx;
-}
-
-.credit-progress {
-  height: 100%;
-  border-radius: 6rpx;
-  transition: width 0.5s;
-}
-
-.credit-tip {
-  font-size: 24rpx;
-  color: #86909C;
-}
-
-.menu-grid {
-  display: flex;
-  flex-wrap: wrap;
-  background-color: #FFFFFF;
-  margin: 24rpx;
+.menu-list {
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 16rpx;
-  padding: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
-.grid-item {
-  width: 33.33%;
+.menu-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 32rpx 0;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  height: 96rpx;
 }
 
-.grid-icon {
-  font-size: 48rpx;
-  margin-bottom: 16rpx;
+.menu-item + .menu-item {
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
 }
 
-.grid-text {
-  font-size: 26rpx;
-  color: #4E5969;
+.menu-left {
+  display: flex;
+  align-items: center;
 }
 
-.logout-btn-wrap {
-  padding: 48rpx 24rpx;
+.menu-icon-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
-.logout-btn, .login-btn {
-  width: 100%;
-  font-size: 32rpx;
-  padding: 28rpx;
-  border-radius: 48rpx;
-  border: 2rpx solid #165DFF;
+.menu-icon {
+  font-size: 28rpx;
+}
+
+.menu-title {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.menu-arrow {
+  font-size: 36rpx;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+}
+
+.logout-section {
+  margin-top: 48rpx;
+  padding: 0 32rpx;
 }
 
 .logout-btn {
-  background-color: #FFFFFF;
-  color: #165DFF;
+  width: 100%;
+  font-size: 30rpx;
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 28rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.login-section {
+  margin-top: 48rpx;
+  padding: 0 32rpx;
 }
 
 .login-btn {
-  background-color: #165DFF;
-  color: #FFFFFF;
+  width: 100%;
+  font-size: 30rpx;
+  color: #165DFF;
+  background-color: #FFFFFF;
+  padding: 28rpx;
+  border-radius: 16rpx;
   border: none;
+  font-weight: 500;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
 }
 </style>

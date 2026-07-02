@@ -96,15 +96,47 @@ public class ImServiceImpl implements ImService {
 
     @Override
     public List<ConversationResponse> getConversationList(String userId) {
-        List<ImMessageMapper.ConversationListVO> voList = imMessageMapper.selectConversationList(userId);
-        return voList.stream()
-                .map(vo -> ConversationResponse.builder()
-                        .targetId(vo.getTargetId())
-                        .lastContent(vo.getLastContent())
-                        .lastTimestamp(vo.getLastTimestamp())
-                        .unreadCount(vo.getUnreadCount())
-                        .build())
-                .collect(Collectors.toList());
+        try {
+            List<ImMessageMapper.ConversationListVO> voList = imMessageMapper.selectConversationList(userId);
+            return voList.stream()
+                    .map(vo -> {
+                        String conversationId = generateConversationId(userId, vo.getTargetId());
+                        return ConversationResponse.builder()
+                                .conversationId(conversationId)
+                                .targetId(vo.getTargetId())
+                                .targetName(getTargetName(vo.getTargetId()))
+                                .targetAvatar("")
+                                .lastContent(vo.getLastContent())
+                                .lastTimestamp(vo.getLastTimestamp())
+                                .unreadCount(vo.getUnreadCount())
+                                .isOnline(false)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private String generateConversationId(String userId, String targetId) {
+        if (userId.compareTo(targetId) < 0) {
+            return userId + "_" + targetId;
+        } else {
+            return targetId + "_" + userId;
+        }
+    }
+
+    private String getTargetName(String targetId) {
+        if (targetId == null || targetId.isEmpty()) {
+            return "未知用户";
+        }
+        if (targetId.startsWith("e-") || targetId.startsWith("ent-")) {
+            return "企业用户";
+        }
+        if (targetId.startsWith("s-") || targetId.startsWith("stu-")) {
+            return "学生用户";
+        }
+        return "用户" + targetId.substring(0, Math.min(6, targetId.length()));
     }
 
     @Override

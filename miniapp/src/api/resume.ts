@@ -11,19 +11,20 @@ export interface WorkTimeSlot {
 }
 
 export interface Resume {
-  id: string
-  user_id: string
+  userId: string
   avatar: string
-  real_name: string
+  realName: string
   gender: 'male' | 'female'
-  school_id: string
-  school_name: string
+  schoolName: string
   phone: string
-  work_time: WorkTimeSlot
-  skills: string[]
-  introduction: string
-  created_at: string
-  updated_at: string
+  availableTime: string
+  skillTags: string
+  education: string
+  workExperience: string
+  selfIntroduction: string
+  major: string
+  grade: string
+  creditScore: number
 }
 
 export interface ResumeResponse {
@@ -35,10 +36,15 @@ export interface ResumeResponse {
 export interface UpdateResumeParams {
   avatar?: string
   gender?: 'male' | 'female'
+  realName?: string
   phone?: string
-  work_time?: WorkTimeSlot
-  skills?: string[]
-  introduction?: string
+  availableTime?: string
+  skillTags?: string
+  education?: string
+  workExperience?: string
+  selfIntroduction?: string
+  major?: string
+  grade?: string
 }
 
 export const resumeApi = {

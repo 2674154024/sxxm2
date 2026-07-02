@@ -22,6 +22,11 @@ export interface PhoneLoginParams {
   code: string
 }
 
+export interface PasswordLoginParams {
+  account: string
+  password: string
+}
+
 export interface WechatLoginParams {
   code: string
 }
@@ -29,6 +34,9 @@ export interface WechatLoginParams {
 export const login = {
   phoneLogin(data: PhoneLoginParams): Promise<LoginResult> {
     return request.post('/v1/auth/phone-login', data)
+  },
+  passwordLogin(data: PasswordLoginParams): Promise<LoginResult> {
+    return request.post('/v1/auth/password-login', data)
   },
   wechatLogin(data: WechatLoginParams): Promise<LoginResult> {
     return request.post('/v1/auth/wechat-login', data)

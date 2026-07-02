@@ -5,6 +5,7 @@ import com.parttime.common.response.R;
 import com.parttime.common.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Component
 public class AdminAuthInterceptor implements HandlerInterceptor {
 
@@ -27,7 +29,9 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
     private ObjectMapper objectMapper;
 
     private static final List<String> PUBLIC_PATHS = Arrays.asList(
-        "/v1/pc/admin/login"
+        "/v1/pc/admin/login",
+        "/v1/pc/admin/enterprise/register",
+        "/v1/pc/admin/enterprise/login"
     );
 
     @Override
@@ -35,6 +39,27 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
         String requestURI = request.getRequestURI();
 
         if (PUBLIC_PATHS.contains(requestURI)) {
+            return true;
+        }
+
+        String gatewayUserId = request.getHeader("X-User-Id");
+        String gatewayRole = request.getHeader("X-Role");
+
+        if (gatewayUserId != null && gatewayRole != null) {
+            Integer role = null;
+            try {
+                role = Integer.parseInt(gatewayRole);
+            } catch (NumberFormatException e) {
+                log.warn("网关角色格式错误: {}", gatewayRole);
+            }
+            request.setAttribute("userId", gatewayUserId);
+            request.setAttribute("X-User-Id", gatewayUserId);
+            request.setAttribute("X-Role", gatewayRole);
+
+            if (!validateRole(requestURI, role)) {
+                responseJson(response, R.forbidden("无权限访问"));
+                return false;
+            }
             return true;
         }
 

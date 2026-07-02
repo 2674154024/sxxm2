@@ -97,7 +97,13 @@ async function handleRegister() {
     const res = await register(phone.value, code.value, password.value, nickname.value)
     if (res.code === 200) {
       userStore.setToken(res.data.token)
-      userStore.setUserInfo(res.data.user_info)
+      userStore.setUserInfo({
+        user_id: res.data.user_info?.userId,
+        role: res.data.user_info?.role,
+        real_name: res.data.user_info?.realName,
+        verify_status: res.data.user_info?.verify_status,
+        credit_score: res.data.user_info?.creditScore,
+      })
 
       showToast({
         message: '注册成功',

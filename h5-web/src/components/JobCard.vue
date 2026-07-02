@@ -34,8 +34,8 @@ function handleClick() {
       </div>
     </div>
     <div class="job-enterprise">
-      <span class="enterprise-name ellipsis-1">{{ job.enterprise_info.enterprise_name }}</span>
-      <span v-if="job.enterprise_info.is_certified" class="certified-tag">
+      <span class="enterprise-name ellipsis-1">{{ job.enterprise_info?.enterprise_name || '未知企业' }}</span>
+      <span v-if="job.enterprise_info?.is_certified" class="certified-tag">
         <span class="certified-icon">✓</span>
         认证企业
       </span>

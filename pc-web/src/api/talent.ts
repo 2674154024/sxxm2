@@ -42,9 +42,20 @@ export interface ApplyListResponse {
   }
 }
 
+const statusMap: Record<string, number> = {
+  pending: 0,
+  interview: 1,
+  hired: 2,
+  rejected: 3
+}
+
 export const talentApi = {
   getApplyList(params: { page?: number; size?: number; status?: string }): Promise<ApplyListResponse> {
-    return request.get('/v1/pc/enterprise/apply/list', { params })
+    const queryParams = { ...params }
+    if (queryParams.status && statusMap[queryParams.status]) {
+      queryParams.status = statusMap[queryParams.status]
+    }
+    return request.get('/v1/pc/enterprise/job/apply/list', { params: queryParams })
   },
   getTalentLibrary(params: { 
     skill_tag?: string

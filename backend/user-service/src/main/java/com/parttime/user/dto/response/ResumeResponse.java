@@ -13,6 +13,16 @@ public class ResumeResponse {
 
     private String userId;
 
+    private String avatar;
+
+    private String realName;
+
+    private String gender;
+
+    private String schoolName;
+
+    private String phone;
+
     private String availableTime;
 
     private String skillTags;
@@ -22,6 +32,10 @@ public class ResumeResponse {
     private String workExperience;
 
     private String selfIntroduction;
+
+    private String major;
+
+    private String grade;
 
     private Integer creditScore;
 }

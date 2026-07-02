@@ -13,7 +13,7 @@ const finished = ref(false)
 async function loadData() {
   loading.value = true
   try {
-    const res = await getFavoriteList()
+    const res = await getFavoriteList({ page: 1, size: 20 })
     if (res.code === 200) {
       list.value = res.data.list
       finished.value = true

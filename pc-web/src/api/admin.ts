@@ -19,6 +19,8 @@ export interface JobAuditItem {
   enterprise_name: string
   enterprise_id: string
   salary_amount: number
+  salary_type: number
+  settlement_type: number
   work_address: string
   status: number
   submit_time: string
@@ -44,10 +46,12 @@ export interface ComplaintItem {
 }
 
 export interface RiskStats {
-  today_complaint_count: number
-  pending_count: number
-  frozen_amount: number
-  compensated_amount: number
+  totalComplaints: number
+  pendingComplaints: number
+  handledComplaints: number
+  totalCompensationAmount: number
+  complaintTypeStats?: { type: string; count: number }[]
+  monthlyStats?: { month: string; complaintCount: number; handledCount: number }[]
 }
 
 export interface SettlementItem {
@@ -74,11 +78,13 @@ export interface AuditLogItem {
 }
 
 export interface AdminRoleItem {
-  role_id: string
-  role_name: string
-  role_type: number
-  permissions: string[]
-  create_time: string
+  id: number
+  roleName: string
+  roleCode: string
+  permissions: string
+  isEnabled: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AdminUserItem {
@@ -97,7 +103,7 @@ export const auditApi = {
     return request.get('/v1/pc/admin/enterprise/audit/list', { params })
   },
 
-  auditEnterprise(data: { enterprise_id: string; action: 'pass' | 'reject'; reason?: string }) {
+  auditEnterprise(data: { enterpriseId: string; status: number; remark?: string }) {
     return request.post('/v1/pc/admin/enterprise/audit', data)
   },
 
@@ -203,7 +209,7 @@ export const systemApi = {
   },
 
   getRoleList() {
-    return request.get('/v1/pc/admin/system/role/list')
+    return request.get('/v1/pc/admin/system/role')
   },
 
   getRolePermissions(role_id: string) {
@@ -222,16 +228,36 @@ export const systemApi = {
     start_time?: string
     end_time?: string
   }) {
-    return request.get('/v1/pc/admin/audit-log/list', { params })
+    return request.get('/v1/pc/admin/system/audit-log/list', { params })
   }
 }
 
 export const authApi = {
   adminLogin(data: { username: string; password: string }) {
-<<<<<<< HEAD
     return request.post('/v1/pc/admin/login', data)
-=======
-    return request.post('/v1/pc/admin/auth/login', data)
->>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
+  },
+
+  enterpriseRegister(data: {
+    username: string
+    password: string
+    enterpriseName: string
+    creditCode: string
+    legalPerson: string
+    contactName: string
+    contactPhone: string
+    email: string
+    address?: string
+  }) {
+    return request.post('/v1/pc/admin/enterprise/register', data)
+  },
+
+  getAdminProfile(params: { adminId: string }) {
+    return request.get('/v1/pc/admin/profile', { params })
+  }
+}
+
+export const searchApi = {
+  searchMenus(params: { keyword: string }) {
+    return request.get('/v1/admin/search', { params })
   }
 }

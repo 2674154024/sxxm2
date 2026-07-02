@@ -77,6 +77,12 @@
       "style": {
         "navigationBarTitleText": "登录"
       }
+    },
+    {
+      "path": "pages/student/login/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
     }
   ],
   "globalStyle": {

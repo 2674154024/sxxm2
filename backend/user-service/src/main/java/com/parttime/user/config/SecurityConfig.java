@@ -24,6 +24,8 @@ public class SecurityConfig implements HandlerInterceptor {
         URL_ROLE_MAP.put("/v1/student/auth/register", Arrays.asList("student"));
         URL_ROLE_MAP.put("/v1/student/profile", Arrays.asList("student"));
         URL_ROLE_MAP.put("/v1/student/resume", Arrays.asList("student"));
+        URL_ROLE_MAP.put("/v1/student/job/apply", Arrays.asList("student"));
+        URL_ROLE_MAP.put("/v1/student/job/favorite", Arrays.asList("student"));
         URL_ROLE_MAP.put("/v1/enterprise/auth/register", Arrays.asList("enterprise"));
         URL_ROLE_MAP.put("/v1/enterprise/profile", Arrays.asList("enterprise"));
     }
@@ -38,6 +40,16 @@ public class SecurityConfig implements HandlerInterceptor {
         }
 
         if (isPublicUrl(requestUri)) {
+            return true;
+        }
+
+        String gatewayUserId = request.getHeader("X-User-Id");
+        String gatewayRole = request.getHeader("X-Role");
+
+        if (gatewayUserId != null && gatewayRole != null) {
+            request.setAttribute("X-User-Id", gatewayUserId);
+            request.setAttribute("X-Role", gatewayRole);
+            checkPermission(requestUri, gatewayRole);
             return true;
         }
 
@@ -66,12 +78,8 @@ public class SecurityConfig implements HandlerInterceptor {
 
     private boolean isPublicUrl(String uri) {
         return uri.startsWith("/v1/auth/") || uri.startsWith("/v1/public/")
-<<<<<<< HEAD
                 || uri.contains("/auth/register") || uri.contains("/auth/login")
                 || uri.contains("/auth/sms-code") || uri.contains("/auth/wechat");
-=======
-                || uri.contains("/auth/register") || uri.contains("/auth/login");
->>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc
     }
 
     private void checkPermission(String uri, String role) {

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-<<<<<<< HEAD
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TabBar from '@/components/TabBar.vue'
 import JobCard from '@/components/JobCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import FilterPanel, { type FilterData } from '@/components/FilterPanel.vue'
-import { mockJobList, type JobItem, getCategories, type CategoryItem } from '@/api/job'
+import { mockJobList, type JobItem, getCategories, type CategoryItem, getJobList } from '@/api/job'
 
 const router = useRouter()
 
@@ -43,29 +42,41 @@ function handleCategoryChange(key: string) {
 
 function applyFilters() {
   loading.value = true
-  setTimeout(() => {
-    let list = activeCategory.value === 'all'
-      ? [...mockJobList]
-      : mockJobList.filter((job) => job.industry_tag === activeCategory.value)
-
-    const d = filterData.value
-
-    if (d.salary_min !== undefined) {
-      list = list.filter((job) => job.salary_amount >= d.salary_min!)
+  const params: any = {
+    page: 1,
+    size: 10,
+  }
+  if (activeCategory.value !== 'all') {
+    params.industry_tag = activeCategory.value
+  }
+  const d = filterData.value
+  if (d.salary_min !== undefined) {
+    params.salary_min = d.salary_min
+  }
+  if (d.salary_max !== undefined) {
+    params.salary_max = d.salary_max
+  }
+  if (d.settlement_type !== undefined) {
+    params.settlement_type = d.settlement_type
+  }
+  if (d.distance !== undefined) {
+    params.distance = d.distance
+  }
+  if (d.is_insured) {
+    params.is_insured = 1
+  }
+  if (d.work_time) {
+    params.work_time = d.work_time
+  }
+  getJobList(params).then((res) => {
+    if (res.code === 200) {
+      jobList.value = res.data.list
     }
-    if (d.salary_max !== undefined) {
-      list = list.filter((job) => job.salary_amount <= d.salary_max!)
-    }
-    if (d.settlement_type !== undefined) {
-      list = list.filter((job) => job.settlement_type === d.settlement_type)
-    }
-    if (d.is_insured) {
-      list = list.filter((job) => job.is_insured)
-    }
-
-    jobList.value = list
     loading.value = false
-  }, 300)
+  }).catch(() => {
+    jobList.value = mockJobList
+    loading.value = false
+  })
 }
 
 function handleFilterConfirm(data: FilterData) {
@@ -92,10 +103,7 @@ function goToSafety() {
 
 onMounted(() => {
   loadCategories()
-  setTimeout(() => {
-    jobList.value = mockJobList
-    loading.value = false
-  }, 600)
+  applyFilters()
 })
 </script>
 
@@ -418,30 +426,3 @@ onMounted(() => {
   color: var(--color-primary);
 }
 </style>
-=======
-</script>
-
-<template>
-  <div class="h5-index">
-    <h2>H5首页</h2>
-    <div class="job-cards">岗位列表占位</div>
-  </div>
-</template>
-
-<style scoped>
-.h5-index {
-  padding: 16px;
-}
-
-.h5-index h2 {
-  margin-bottom: 16px;
-  color: #4E5969;
-}
-
-.job-cards {
-  background-color: #FFFFFF;
-  padding: 12px;
-  border-radius: 8px;
-}
-</style>
->>>>>>> 5b80af1a326ea41e292b4b1c528588055fc89dfc

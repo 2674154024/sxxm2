@@ -37,7 +37,7 @@ public class SalaryFlowEntity {
     @TableField("work_hours")
     private BigDecimal workHours;
 
-    @TableField("hourly_rate")
+    @TableField("hourly_wage")
     private BigDecimal hourlyRate;
 
     @TableField("gross_amount")
@@ -49,7 +49,7 @@ public class SalaryFlowEntity {
     @TableField("net_amount")
     private BigDecimal netAmount;
 
-    @TableField("status")
+    @TableField("settlement_status")
     private Integer status;
 
     @TableField("agreement_id")

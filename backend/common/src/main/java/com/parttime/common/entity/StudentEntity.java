@@ -39,6 +39,12 @@ public class StudentEntity {
     @TableField("phone_encrypt")
     private String phoneEncrypt;
 
+    @TableField("username")
+    private String username;
+
+    @TableField("password")
+    private String password;
+
     @TableField("verify_status")
     private Integer verifyStatus;
 
